@@ -16,7 +16,7 @@ public final class Actor {
     private Double rating;
     private Integer counter;
 
-    public Actor(ActorInputData actor) {
+    public Actor(final ActorInputData actor) {
         this.name = actor.getName();
         this.careerDescription = actor.getCareerDescription();
         this.filmography = actor.getFilmography();
@@ -45,7 +45,7 @@ public final class Actor {
         return rating;
     }
 
-    public void setRating(Double rating) {
+    public void setRating(final Double rating) {
         this.rating = rating;
     }
 
@@ -53,16 +53,15 @@ public final class Actor {
         return counter;
     }
 
-    public void setCounter(Integer counter) {
+    public void setCounter(final Integer counter) {
         this.counter = counter;
     }
 
     /**
-     *
-     * @param actor every actor in the list
+     * @param actor actor in the data base
      * @return number of awards
      */
-    public final int awards_number(Actor actor) {
+    public int awardsnumber(final Actor actor) {
         List<Integer> vals = new ArrayList<>(actor.getAwards().values());
         int sum = 0;
         if (vals.size() != 0) {
@@ -73,9 +72,15 @@ public final class Actor {
         return sum;
     }
 
-    public final boolean check_awards(Actor actor, List<String> data) {
+    /**
+     * @param actor check the awards of this actpr
+     * @param data  the awards as string list
+     * @return true if the actor has all the awards or false if not
+     */
+    public boolean checkawards(final Actor actor, final List<String> data) {
         List<ActorsAwards> prizes = new ArrayList<>(actor.getAwards().keySet());
-        int i = 0, j = 0;
+        int i = 0;
+        int j = 0;
         while (i < prizes.size() && j < data.size()) {
             if (data.get(j).equals(prizes.get(i).toString())) {
                 j++;
@@ -86,20 +91,19 @@ public final class Actor {
             if (j == data.size()) {
                 return true;
             }
-
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return "Actor{" +
-                "name='" + name + '\'' +
-                ", careerDescription='" + careerDescription + '\'' +
-                ", filmography=" + filmography +
-                ", awards=" + awards +
-                ", rating=" + rating +
-                ", counter=" + counter +
-                '}';
+        return "Actor{"
+                + "name='" + name + '\''
+                + ", careerDescription='" + careerDescription + '\''
+                + ", filmography=" + filmography
+                + ", awards=" + awards
+                + ", rating=" + rating
+                + ", counter=" + counter
+                + '}';
     }
 }

@@ -1,7 +1,13 @@
 package user;
 
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import fileio.UserInputData;
 import video.Movie;
@@ -14,102 +20,108 @@ public class User {
 
     private String username;
     private String subscriptionType;
-    private  Map<String, Integer> history;
+    private Map<String, Integer> history;
     private final ArrayList<String> favoriteMovies;
-    private final ArrayList<String> movie_user;
-    private Map<String, ArrayList<String> > serie_user;
-    private int no_actions;
-    private HashMap<String, Double> shows_ratings;
+    private final ArrayList<String> movieuser;
+    private final Map<String, ArrayList<String>> serieuser;
+    private int nmbofactions;
+    private HashMap<String, Double> showsratings;
 
-    public User(UserInputData a) {
+    public User(final UserInputData a) {
         username = a.getUsername();
         subscriptionType = a.getSubscriptionType();
         history = a.getHistory();
         favoriteMovies = a.getFavoriteMovies();
-        movie_user = new ArrayList<>();
-        serie_user = new HashMap<>();
-        no_actions = 0;
-        shows_ratings = new HashMap<>();
+        movieuser = new ArrayList<>();
+        serieuser = new HashMap<>();
+        nmbofactions = 0;
+        showsratings = new HashMap<>();
     }
 
-    public HashMap<String, Double> ratings_genre = new HashMap<>();
+    private HashMap<String, Double> ratingsgenre = new HashMap<>();
 
-    public HashMap<String, Double> getRatings_genre() {
-        return ratings_genre;
+    public final HashMap<String, Double> getRatingsgenre() {
+        return ratingsgenre;
     }
 
-    public void setRatings_genre(HashMap<String, Double> ratings_genre) {
-        this.ratings_genre = ratings_genre;
+    public final void setRatingsgenre(final HashMap<String, Double> ratingsgenre) {
+        this.ratingsgenre = ratingsgenre;
     }
 
-    public Map<String, ArrayList<String>> getSerie_user() {
-        return serie_user;
+    public final Map<String, ArrayList<String>> getSerieuser() {
+        return serieuser;
     }
 
-    public void setSerie_user(Map<String, ArrayList<String>> serie_user) {
-        this.serie_user = serie_user;
-    }
-
-    public String getUsername() {
+    public final String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
+    public final void setUsername(final String username) {
         this.username = username;
     }
 
-    public String getSubscriptionType() {
+    public final String getSubscriptionType() {
         return subscriptionType;
     }
 
-    public void setSubscriptionType(String subscriptionType) {
+    public final void setSubscriptionType(final String subscriptionType) {
         this.subscriptionType = subscriptionType;
     }
 
-    public Map<String, Integer> getHistory() {
+    public final Map<String, Integer> getHistory() {
         return history;
     }
 
-    public void setHistory(Map<String, Integer> history) {
+    public final void setHistory(final Map<String, Integer> history) {
         this.history = history;
     }
 
-    public ArrayList<String> getFavoriteMovies() {
+    public final ArrayList<String> getFavoriteMovies() {
         return favoriteMovies;
     }
 
-    public int getNo_actions() {
-        return no_actions;
+    public final int getNoactions() {
+        return nmbofactions;
     }
 
-    public void setNo_actions(int no_actions) {
-        this.no_actions = no_actions;
+    public final void setNoactions(final int nmbofactions1) {
+        this.nmbofactions = nmbofactions1;
     }
 
-    public HashMap<String, Double> getShows_ratings() {
-        return shows_ratings;
+    public final HashMap<String, Double> getShowsratings() {
+        return showsratings;
     }
 
-    public void setShows_ratings(HashMap<String, Double> shows_ratings) {
-        this.shows_ratings = shows_ratings;
+    public final void setShowsratings(final HashMap<String, Double> showsratings) {
+        this.showsratings = showsratings;
     }
 
-    public void View(String Title) {
-        if (history.containsKey(Title)) {
-            int count = history.get(Title);
-            history.put(Title, count + 1);
+    public final ArrayList<String> getMovieuser() {
+        return movieuser;
+    }
+
+    /**
+     * @param title add a video to history
+     */
+    public void view(final String title) {
+        if (history.containsKey(title)) {
+            int count = history.get(title);
+            history.put(title, count + 1);
         } else {
-            history.put(Title, 1);
+            history.put(title, 1);
         }
     }
 
-    public int search_Favourites(String video_name) {
-        if (favoriteMovies.size() == 0){
+    /**
+     * @param videoname the video to be searched for
+     * @return the index of the searched video
+     */
+    public int searchFavourites(final String videoname) {
+        if (favoriteMovies.size() == 0) {
             return -1;
-        }
-        else {
+        } else {
             for (int i = 0; i < favoriteMovies.size(); i++) {
-                if (favoriteMovies.get(i).equals(video_name)) {
+                if (favoriteMovies.get(i).equals(videoname)) {
                     return i;
                 }
             }
@@ -117,112 +129,141 @@ public class User {
         return -1;
     }
 
-
-    public String Favorites(String Title, User wanted_user) {
+    /**
+     * @param title      the title of the show
+     * @param wanteduser the user for which we complete the command
+     * @return the message generated for the action made
+     */
+    public String favorites(final String title, final User wanteduser) {
         StringBuilder message = new StringBuilder();
-        if (!history.containsKey(Title)) {
+        if (!wanteduser.getHistory().containsKey(title)) {
             message.append("error -> ");
-            message.append(Title);
+            message.append(title);
             message.append(" is not seen");
         } else {
-            int position = wanted_user.search_Favourites(Title);
+            int position = wanteduser.searchFavourites(title);
             if (position == -1) {
-                wanted_user.favoriteMovies.add(Title);
+                wanteduser.favoriteMovies.add(title);
                 message.append("success -> ");
-                message.append(Title);
+                message.append(title);
                 message.append(" was added as favourite");
 
             } else {
                 message.append("error -> ");
-                message.append(Title);
+                message.append(title);
                 message.append(" is already in favourite list");
             }
         }
         return message.toString();
     }
 
-    public String Rating(User wanted_user, double rating, String Title, int season_number, MovieDB movies){
+    /**
+     * @param wanteduser   the user which started the action
+     * @param rating       the rating he's about to give
+     * @param title        the name of the show
+     * @param seasonnumber the number of the season
+     * @param movies       list of all the movies in the database
+     *                     first check whether given title is a movie or a show
+     *                     then checks if the show is seen, or already in the favourites
+     * @return message showcasing the result of the user's action
+     */
+    public String rating(final User wanteduser, final double rating, final String title,
+                         final int seasonnumber, final MovieDB movies) {
         StringBuilder message = new StringBuilder();
-        Movie dummy_movie = movies.search(movies, Title);
-        if (dummy_movie != null) {
-            if (history.containsKey(Title) && movie_user.contains(Title)) {
+        Movie dummymovie = movies.search(movies, title);
+        if (dummymovie != null) {
+            if (wanteduser.getHistory().containsKey(title)
+                    && wanteduser.getMovieuser().contains(title)) {
                 message.append("error -> ");
-                message.append(Title);
+                message.append(title);
                 message.append(" has been already rated");
 
-            } else if (history.containsKey(Title) && !movie_user.contains(Title)) {
+            } else if (wanteduser.getHistory().containsKey(title)
+                    && !wanteduser.getMovieuser().contains(title)) {
                 message.append("success -> ");
-                message.append(Title);
+                message.append(title);
                 message.append(" was rated with ");
                 message.append(rating);
                 message.append(" by ");
-                message.append(wanted_user.getUsername());
-                wanted_user.setNo_actions(wanted_user.getNo_actions() + 1);
-                movie_user.add(Title);
-            } else if (!history.containsKey(Title)) {
+                message.append(wanteduser.getUsername());
+                wanteduser.setNoactions(wanteduser.getNoactions() + 1);
+                wanteduser.getMovieuser().add(title);
+            } else if (!wanteduser.getHistory().containsKey(title)) {
                 message.append("error -> ");
-                message.append(Title);
+                message.append(title);
                 message.append(" is not seen");
             }
 
-        }
-        else {
-            if (!serie_user.containsKey(Title)) {
-                serie_user.put(Title, new ArrayList<>());
+        } else {
+            if (!wanteduser.getSerieuser().containsKey(title)) {
+                wanteduser.getSerieuser().put(title, new ArrayList<>());
             }
-            if (history.containsKey(Title) && serie_user.get(Title).contains(Integer.toString(season_number))) {
+            if (wanteduser.getHistory().containsKey(title)
+                    && wanteduser.getSerieuser().get(title)
+                    .contains(Integer.toString(seasonnumber))) {
                 message.append("error -> ");
-                message.append(Title);
+                message.append(title);
                 message.append(" has been already rated");
 
-            } else if (history.containsKey(Title) && !serie_user.get(Title).contains(Integer.toString(season_number))) {
+            } else if (wanteduser.getHistory().containsKey(title)
+                    && !wanteduser.getSerieuser().get(title)
+                    .contains(Integer.toString(seasonnumber))) {
                 message.append("success -> ");
-                message.append(Title);
+                message.append(title);
                 message.append(" was rated with ");
                 message.append(rating);
                 message.append(" by ");
-                message.append(wanted_user.getUsername());
-                serie_user.get(Title).add(Integer.toString(season_number));
-                wanted_user.setNo_actions(wanted_user.getNo_actions() + 1);
-            } else if (!history.containsKey(Title)) {
+                message.append(wanteduser.getUsername());
+                wanteduser.getSerieuser().get(title).add(Integer
+                        .toString(seasonnumber));
+                wanteduser.setNoactions(wanteduser.getNoactions() + 1);
+            } else if (!wanteduser.getHistory().containsKey(title)) {
                 message.append("error -> ");
-                message.append(Title);
+                message.append(title);
                 message.append(" is not seen");
             }
         }
         return message.toString();
-        }
-
-
-    public void copy_showsratings(MovieDB movies, SeriesDB series, User user){
-        user.getShows_ratings().clear();
-        for (Movie movie : movies.getMovie_list()){
-            if (!user.getHistory().containsKey(movie.getTitle()) && movie.gettruerating() != 0) {
-                user.getShows_ratings().put(movie.getTitle(), movie.gettruerating());
-            }
-        }
-        for (Series serie : series.getSeries_list()){
-            if (!user.getHistory().containsKey(serie.getTitle()) && serie.gettruerating() != 0 ) {
-                user.getShows_ratings().put(serie.getTitle(), serie.gettruerating());
-            }
-        }
-
-
     }
 
+    /**
+     * @param movies list of all the movies in the database
+     * @param series list of all the series in the database
+     * @param user   the user who initiates the command
+     */
+    public final void copyshowsratings(final MovieDB movies, final SeriesDB series,
+                                       final User user) {
+        user.getShowsratings().clear();
+        for (Movie movie : movies.getMovielist()) {
+            if (!user.getHistory().containsKey(movie.getTitle())
+                    && movie.gettruerating() != 0) {
+                user.getShowsratings().put(movie.getTitle(), movie.gettruerating());
+            }
+        }
+        for (Series serie : series.getSerieslist()) {
+            if (!user.getHistory().containsKey(serie.getTitle())
+                    && serie.gettruerating() != 0) {
+                user.getShowsratings().put(serie.getTitle(), serie.gettruerating());
+            }
+        }
+    }
 
-    public void sort_showsratings(User user){
-        List<Double> mapvalues = new ArrayList<>(user.getShows_ratings().values());
-        List<String> mapkeys = new ArrayList<>(user.getShows_ratings().keySet());
+    /**
+     * @param user the user who inititates the command
+     *             sort all user's videos by rating
+     */
+    public final void sortshowsratings(final User user) {
+        List<Double> mapvalues = new ArrayList<>(user.getShowsratings().values());
+        List<String> mapkeys = new ArrayList<>(user.getShowsratings().keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
-        LinkedHashMap<String,Double> sortedMap = new LinkedHashMap<>();
+        LinkedHashMap<String, Double> sortedMap = new LinkedHashMap<>();
         for (double val : mapvalues) {
             Iterator<String> key = mapkeys.iterator();
 
             while (key.hasNext()) {
                 String cheie = key.next();
-                double comp1 = user.getShows_ratings().get(cheie);
+                double comp1 = user.getShowsratings().get(cheie);
 
                 if (comp1 == val) {
                     key.remove();
@@ -233,85 +274,57 @@ public class User {
             }
 
         }
-        user.setShows_ratings(sortedMap);
+        user.setShowsratings(sortedMap);
     }
 
-//    public void sort_moviesratings(User user){
-//        List<Double> mapvalues = new ArrayList<>(user.getMovie_rating().values());
-//        List<String> mapkeys = new ArrayList<>(user.getMovie_rating().keySet());
-//        Collections.sort(mapkeys);
-//        Collections.sort(mapvalues);
-//        LinkedHashMap<String,Double> sortedMap = new LinkedHashMap<>();
-//        Iterator<Double> iterator = mapvalues.iterator();
-//        while (iterator.hasNext()){
-//            double val = iterator.next();
-//            Iterator<String> key = mapkeys.iterator();
-//
-//            while (key.hasNext() ){
-//                String cheie = key.next();
-//                double comp1 = user.getMovie_rating().get(cheie);
-//
-//                if (comp1 == val){
-//                    key.remove();
-//                    sortedMap.put(cheie, val);
-//                    break;
-//                }
-//
-//            }
-//
-//        }
-//        user.setMovie_rating(sortedMap);
-//    }
-
-    public void copy_ratingsgenre(User user, MovieDB movies, SeriesDB series, String gen){
-        user.getRatings_genre().clear();
-        for (Movie movie : movies.getMovie_list()){
-            if (movie.getGenres().contains(gen) && !user.getHistory().containsKey(movie.getTitle())){
-                user.getRatings_genre().put(movie.getTitle(), movie.gettruerating());
+    /**
+     * @param user   the user who initiated the command
+     * @param movies a list of all the movies in the database
+     * @param series a list of all the series in the database
+     * @param gen    the genre of the videos we want to search
+     *               creates a hashmap of videos of the same genre,
+     *               by adding a video name and its average rating
+     */
+    public final void copyratingsgenre(final User user, final MovieDB movies,
+                                       final SeriesDB series, final String gen) {
+        user.getRatingsgenre().clear();
+        for (Movie movie : movies.getMovielist()) {
+            if (movie.getGenres().contains(gen)
+                    && !user.getHistory().containsKey(movie.getTitle())) {
+                user.getRatingsgenre().put(movie.getTitle(), movie.gettruerating());
             }
         }
-        for (Series serie : series.getSeries_list() ){
-            if (serie.getGenres().contains(gen)  && !user.getHistory().containsKey(serie.getTitle())){
-                user.getRatings_genre().put(serie.getTitle(), serie.gettruerating());
+        for (Series serie : series.getSerieslist()) {
+            if (serie.getGenres().contains(gen)
+                    && !user.getHistory().containsKey(serie.getTitle())) {
+                user.getRatingsgenre().put(serie.getTitle(), serie.gettruerating());
             }
         }
     }
 
-    public void sort_ratingsgenre(User user){
-        List<Double> mapvalues = new ArrayList<>(user.getRatings_genre().values());
-        List<String> mapkeys = new ArrayList<>(user.getRatings_genre().keySet());
+    /**
+     * @param user the user who started the action
+     *             sort the above mentioned ratings list
+     */
+    public final void sortratingsgenre(final User user) {
+        List<Double> mapvalues = new ArrayList<>(user.getRatingsgenre().values());
+        List<String> mapkeys = new ArrayList<>(user.getRatingsgenre().keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
-        LinkedHashMap<String,Double> sortedMap = new LinkedHashMap<>();
+        LinkedHashMap<String, Double> sortedMap = new LinkedHashMap<>();
         for (double val : mapvalues) {
             Iterator<String> key = mapkeys.iterator();
-
             while (key.hasNext()) {
                 String cheie = key.next();
-                double comp1 = user.getRatings_genre().get(cheie);
-
+                double comp1 = user.getRatingsgenre().get(cheie);
                 if (comp1 == val) {
                     key.remove();
                     sortedMap.put(cheie, val);
                     break;
                 }
-
             }
-
         }
-        user.setRatings_genre(sortedMap);
+        user.setRatingsgenre(sortedMap);
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "username='" + username + '\'' +
-                ", subscriptionType='" + subscriptionType + '\'' +
-                ", history=" + history +
-                ", favoriteMovies=" + favoriteMovies +
-                ", movie_user=" + movie_user +
-                ", serie_user=" + serie_user +
-                ", no_actions=" + no_actions +
-                '}';
-    }
 }

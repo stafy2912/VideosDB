@@ -7,97 +7,112 @@ import video.MovieDB;
 import video.Series;
 import video.SeriesDB;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public class UserDB {
 
-    public ArrayList<User> user_list;
+    private ArrayList<User> userlist;
 
-    public HashMap<String, Integer> actions_list;
+    private HashMap<String, Integer> actionslist;
 
-    public HashMap<String, Integer> favorites;
+    private HashMap<String, Integer> favorites;
 
-    public HashMap<String, Double> genre_list;
+    private HashMap<String, Double> genrelist;
 
-    private HashMap<String, Integer> fav_movies;
+    private HashMap<String, Integer> favmovies;
 
-    public HashMap<String, Integer> getActions_list() {
-        return actions_list;
+    public final HashMap<String, Integer> getActionslist() {
+        return actionslist;
     }
 
-    public void setActions_list(HashMap<String, Integer> actions_list) {
-        this.actions_list = actions_list;
+    public final void setActionslist(final HashMap<String, Integer> actionslist) {
+        this.actionslist = actionslist;
     }
 
-    public UserDB(ArrayList<User> user_list) {
-        this.user_list = user_list;
-        this.fav_movies = new HashMap<>();
-        this.actions_list = new HashMap<>();
+    public UserDB(final ArrayList<User> userlist) {
+        this.userlist = userlist;
+        this.favmovies = new HashMap<>();
+        this.actionslist = new HashMap<>();
         this.favorites = new HashMap<>();
-        this.genre_list = new HashMap<>();
-        this.fav_movies = new HashMap<>();
+        this.genrelist = new HashMap<>();
+        this.favmovies = new HashMap<>();
     }
 
-    public HashMap<String, Double> getGenre_list() {
-        return genre_list;
+    public final HashMap<String, Double> getGenrelist() {
+        return genrelist;
     }
 
-    public HashMap<String, Integer> getFavorites() {
+    public final HashMap<String, Integer> getFavorites() {
         return favorites;
     }
 
-    public void setFavorites(HashMap<String, Integer> favorites) {
+    public final void setFavorites(final HashMap<String, Integer> favorites) {
         this.favorites = favorites;
     }
 
-    public void setGenre_list(HashMap<String, Double> genre_list) {
-        this.genre_list = genre_list;
+    public final void setGenrelist(final HashMap<String, Double> genrelist1) {
+        this.genrelist = genrelist1;
     }
 
-    public HashMap<String, Integer> getFav_movies() {
-        return fav_movies;
+    public final HashMap<String, Integer> getFavmovies() {
+        return favmovies;
     }
 
-    public void setFav_movies(HashMap<String, Integer> fav_movies) {
-        this.fav_movies = fav_movies;
+    public final void setFavmovies(final HashMap<String, Integer> favmovies1) {
+        this.favmovies = favmovies1;
     }
 
-    public ArrayList<User> getUser_list() {
-        return user_list;
+    public final ArrayList<User> getUserlist() {
+        return userlist;
     }
 
-    public void setUser_list(ArrayList<User> user_list) {
-        this.user_list = user_list;
+    public final void setUserlist(final ArrayList<User> userlist1) {
+        this.userlist = userlist1;
     }
 
-    public void copy(List<UserInputData> data_list) {
-        User buffer_user;
-        for (UserInputData userx : data_list) {
-            buffer_user = new User(userx);
-            user_list.add(buffer_user);
+    /**
+     * @param datalist iall users from input
+     *                  creates my own database of users
+     */
+    public final void copy(final List<UserInputData> datalist) {
+        User bufferuser;
+        for (UserInputData userx : datalist) {
+            bufferuser = new User(userx);
+            userlist.add(bufferuser);
         }
     }
 
-
-    public void find_favmovies(UserDB users, List<MovieInputData> data) {
+    /**
+     * @param users the users data base
+     * @param data  list of movies
+     *              creates a list of all favourite movies
+     */
+    public void findfavmovies(final UserDB users, final List<MovieInputData> data) {
         for (MovieInputData movie : data) {
-            if (!fav_movies.containsKey(movie.getTitle())) {
-                fav_movies.put(movie.getTitle(), 1);
+            if (!favmovies.containsKey(movie.getTitle())) {
+                favmovies.put(movie.getTitle(), 1);
             }
         }
-
-        for (int i = 0; i < users.user_list.size(); i++) {
-            for (String Title : users.user_list.get(i).getFavoriteMovies()) {
-                if (fav_movies.containsKey(Title)) {
-                    fav_movies.put(Title, fav_movies.get(Title) + 1);
+        for (int i = 0; i < users.userlist.size(); i++) {
+            for (String title : users.userlist.get(i).getFavoriteMovies()) {
+                if (favmovies.containsKey(title)) {
+                    favmovies.put(title, favmovies.get(title) + 1);
                 }
             }
         }
     }
 
-
-    public User search(String nickname) {
-        for (User user : user_list) {
+    /**
+     * @param nickname the user's name
+     * @return the wanted user or null if not found
+     */
+    public User search(final String nickname) {
+        for (User user : userlist) {
             if (user.getUsername().equals(nickname)) {
                 return user;
             }
@@ -105,9 +120,13 @@ public class UserDB {
         return null;
     }
 
-    public void sortFavourite(UserDB users) {
-        List<Integer> mapvalues = new ArrayList<>(fav_movies.values());
-        List<String> mapkeys = new ArrayList<>(fav_movies.keySet());
+    /**
+     * @param users the users database
+     *              sorts the favourite movies
+     */
+    public void sortFavourite(final UserDB users) {
+        List<Integer> mapvalues = new ArrayList<>(users.getFavmovies().values());
+        List<String> mapkeys = new ArrayList<>(users.getFavmovies().keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
         LinkedHashMap<String, Integer> sortedMap = new LinkedHashMap<>();
@@ -116,7 +135,7 @@ public class UserDB {
 
             while (key.hasNext()) {
                 String cheie = key.next();
-                int comp1 = fav_movies.get(cheie);
+                int comp1 = users.getFavmovies().get(cheie);
 
                 if (comp1 == val) {
                     key.remove();
@@ -127,21 +146,29 @@ public class UserDB {
             }
 
         }
-        users.setFav_movies(sortedMap);
+        users.setFavmovies(sortedMap);
     }
 
-    public void copy_numactions(UserDB users) {
-        users.getActions_list().clear();
-        for (User user : users.getUser_list()) {
-            if (user.getNo_actions() != 0) {
-                actions_list.put(user.getUsername(), user.getNo_actions());
+    /**
+     * @param users ths users data base
+     *              creates a hashmap of <user name><num of valid actions>
+     */
+    public void copynumactions(final UserDB users) {
+        users.getActionslist().clear();
+        for (User user : users.getUserlist()) {
+            if (user.getNoactions() != 0) {
+                actionslist.put(user.getUsername(), user.getNoactions());
             }
         }
     }
 
-    public void sortnoactions(UserDB users) {
-        List<Integer> mapvalues = new ArrayList<>(users.getActions_list().values());
-        List<String> mapkeys = new ArrayList<>(users.getActions_list().keySet());
+    /**
+     * @param users the users database
+     *              sorts the above mentioned hasmap
+     */
+    public void sortnoactions(final UserDB users) {
+        List<Integer> mapvalues = new ArrayList<>(users.getActionslist().values());
+        List<String> mapkeys = new ArrayList<>(users.getActionslist().keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
         LinkedHashMap<String, Integer> sortedMap = new LinkedHashMap<>();
@@ -150,7 +177,7 @@ public class UserDB {
 
             while (key.hasNext()) {
                 String cheie = key.next();
-                int comp1 = users.getActions_list().get(cheie);
+                int comp1 = users.getActionslist().get(cheie);
 
                 if (comp1 == val) {
                     key.remove();
@@ -161,34 +188,43 @@ public class UserDB {
             }
 
         }
-        users.setActions_list(sortedMap);
+        users.setActionslist(sortedMap);
     }
 
-    public void copy_genre_list(MovieDB movies, SeriesDB series) {
-        genre_list.clear();
-        for (Movie movie : movies.getMovie_list()) {
+    /**
+     * @param movies the movies database
+     * @param series the series database
+     *               creates a hashmap of <genre><number of apparitions>
+     */
+    public void copygenrelist(final MovieDB movies, final SeriesDB series) {
+        genrelist.clear();
+        for (Movie movie : movies.getMovielist()) {
             for (String gen : movie.getGenres()) {
-                if (!genre_list.containsKey(gen)) {
-                    genre_list.put(gen, 1.0);
+                if (!genrelist.containsKey(gen)) {
+                    genrelist.put(gen, 1.0);
                 } else {
-                    genre_list.put(gen, genre_list.get(gen) + 1);
+                    genrelist.put(gen, genrelist.get(gen) + 1);
                 }
             }
         }
-        for (Series serie : series.getSeries_list()) {
+        for (Series serie : series.getSerieslist()) {
             for (String gen : serie.getGenres()) {
-                if (!genre_list.containsKey(gen)) {
-                    genre_list.put(gen, 1.0);
+                if (!genrelist.containsKey(gen)) {
+                    genrelist.put(gen, 1.0);
                 } else {
-                    genre_list.put(gen, genre_list.get(gen) + 1);
+                    genrelist.put(gen, genrelist.get(gen) + 1);
                 }
             }
         }
     }
 
-    public void sort_genres_list(UserDB users) {
-        List<Double> mapvalues = new ArrayList<>(users.getGenre_list().values());
-        List<String> mapkeys = new ArrayList<>(users.getGenre_list().keySet());
+    /**
+     * @param users the users database
+     *              sorts the genrelist hashmap
+     */
+    public void sortgenreslist(final UserDB users) {
+        List<Double> mapvalues = new ArrayList<>(users.getGenrelist().values());
+        List<String> mapkeys = new ArrayList<>(users.getGenrelist().keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
         LinkedHashMap<String, Double> sortedMap = new LinkedHashMap<>();
@@ -197,7 +233,7 @@ public class UserDB {
 
             while (key.hasNext()) {
                 String cheie = key.next();
-                double comp1 = users.getGenre_list().get(cheie);
+                double comp1 = users.getGenrelist().get(cheie);
 
                 if (comp1 == val) {
                     key.remove();
@@ -208,23 +244,35 @@ public class UserDB {
             }
 
         }
-        users.setGenre_list(sortedMap);
+        users.setGenrelist(sortedMap);
     }
 
-    public void copy_favorites(UserDB users, User wanted) {
+    /**
+     * @param users  the users database
+     * @param wanted the user for whom we search
+     *               creates a hashmap of
+     *               <video title><number of apparitions in favorite list>
+     */
+    public void copyfavorites(final UserDB users, final User wanted) {
         users.getFavorites().clear();
-        for (User user : users.getUser_list()) {
+        for (User user : users.getUserlist()) {
             for (String title : user.getFavoriteMovies()) {
-                if (!users.getFavorites().containsKey(title) && !wanted.getHistory().containsKey(title)) {
+                if (!users.getFavorites().containsKey(title)
+                        && !wanted.getHistory().containsKey(title)) {
                     users.getFavorites().put(title, 1);
-                } else if (users.getFavorites().containsKey(title) && !wanted.getHistory().containsKey(title)) {
+                } else if (users.getFavorites().containsKey(title)
+                        && !wanted.getHistory().containsKey(title)) {
                     users.getFavorites().put(title, users.getFavorites().get(title) + 1);
                 }
             }
         }
     }
 
-    public void sort_favorit(UserDB users) {
+    /**
+     * @param users the users database
+     *              sorts the favorite_shows hashmap
+     */
+    public void sortfavorite(final UserDB users) {
         List<Integer> mapvalues = new ArrayList<>(users.getFavorites().values());
         List<String> mapkeys = new ArrayList<>(users.getFavorites().keySet());
         Collections.sort(mapkeys);
@@ -248,46 +296,6 @@ public class UserDB {
         }
         users.setFavorites(sortedMap);
     }
-
-//    public void copy_allfavorites(UserDB users)  {
-//        for (User user : users.getUser_list()){
-//            for (String title : user.getFavoriteMovies()){
-//                if (!users.getAll_favorites().containsKey(title)){
-//                    users.getAll_favorites().put(title, 1);
-//                }
-//                else if (users.getAll_favorites().containsKey(title)){
-//                    users.getAll_favorites().put(title, users.getAll_favorites().get(title) + 1);
-//                }
-//            }
-//
-//        }
-//    }
-//
-//    public void sort_allfavorit(UserDB users){
-//        List<Integer> mapvalues = new ArrayList<>(users.getAll_favorites().values());
-//        List<String> mapkeys = new ArrayList<>(users.getAll_favorites().keySet());
-//        Collections.sort(mapkeys);
-//        Collections.sort(mapvalues);
-//        LinkedHashMap<String,Integer> sortedMap = new LinkedHashMap<>();
-//        for (int val : mapvalues) {
-//            Iterator<String> key = mapkeys.iterator();
-//
-//            while (key.hasNext()) {
-//                String cheie = key.next();
-//                int comp1 = users.getAll_favorites().get(cheie);
-//
-//                if (comp1 == val) {
-//                    key.remove();
-//                    sortedMap.put(cheie, val);
-//                    break;
-//                }
-//
-//            }
-//
-//        }
-//        users.setFavorites(sortedMap);
-//    }
-
 
 }
 

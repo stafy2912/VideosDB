@@ -4,59 +4,14 @@ import fileio.MovieInputData;
 import user.User;
 import user.UserDB;
 
-import java.util.ArrayList;
 
 public class Movie extends Video {
 
     private int duration;
-    private String title;
-    private int year;
-    private ArrayList<String> cast;
-    private ArrayList<String> genres;
     private double rating;
     private int counter;
 
-    @Override
-    public String getTitle() {
-        return title;
-    }
-
-    @Override
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    @Override
-    public int getYear() {
-        return year;
-    }
-
-    @Override
-    public void setYear(int year) {
-        this.year = year;
-    }
-
-    @Override
-    public ArrayList<String> getCast() {
-        return cast;
-    }
-
-    @Override
-    public void setCast(ArrayList<String> cast) {
-        this.cast = cast;
-    }
-
-    @Override
-    public ArrayList<String> getGenres() {
-        return genres;
-    }
-
-    @Override
-    public void setGenres(ArrayList<String> genres) {
-        this.genres = genres;
-    }
-
-    public Movie(MovieInputData data) {
+    public Movie(final MovieInputData data) {
         title = data.getTitle();
         year = data.getYear();
         cast = data.getCast();
@@ -66,57 +21,49 @@ public class Movie extends Video {
         counter = 0;
     }
 
-    public int getDuration() {
+    public final int getDuration() {
         return duration;
     }
 
-    public void setDuration(int duration) {
+    public final void setDuration(final int duration) {
         this.duration = duration;
     }
 
-    public double getRating() {
+    public final double getRating() {
         return rating;
     }
 
-    public void setRating(double rating) {
+    public final void setRating(final double rating) {
         this.rating = rating;
     }
 
-    public int getCounter() {
+    public final int getCounter() {
         return counter;
     }
 
-    public void setCounter(int counter) {
+    public final void setCounter(final int counter) {
         this.counter = counter;
     }
 
-    public double gettruerating() {
+    /**
+     *
+     * @return the average rating of a movie
+     */
+    public final double gettruerating() {
         if (counter != 0) {
             return rating / counter;
         }
         return 0;
     }
 
-    @Override
-    public String toString() {
-        return "Movie{" +
-                "duration=" + duration +
-                ", title='" + title + '\'' +
-                ", year=" + year +
-                ", cast=" + cast +
-                ", genres=" + genres +
-                ", rating=" + rating +
-                ", counter=" + counter +
-                '}';
-    }
-
-    public void addRating(Double grade) {
-        rating += grade;
-    }
-
-    public int get_nofavorites(UserDB users) {
+    /**
+     * @param users the users database
+     * @return the number of times the movie (its name is title)
+     * is in the favoite list of the users
+     */
+    public int getnmbfavorites(final UserDB users) {
         int count = 0;
-        for (User user : users.getUser_list()) {
+        for (User user : users.getUserlist()) {
             if (user.getFavoriteMovies().contains(title)) {
                 count++;
             }

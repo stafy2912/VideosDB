@@ -6,62 +6,76 @@ import java.util.ArrayList;
 
 public class Video {
 
-    private String title;
-    private int year;
-    private ArrayList<String> cast;
-    private ArrayList<String> genres;
+    protected String title;
+    protected int year;
+    protected ArrayList<String> cast;
+    protected ArrayList<String> genres;
 
     public Video() {
     }
 
-    public Video(ShowInput data) {
+    public Video(final ShowInput data) {
         title = data.getTitle();
         year = data.getYear();
         cast = data.getCast();
         genres = data.getGenres();
     }
 
-
+    /**
+     * @return title of the video
+     */
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
+    /**
+     * @param title set title of the video
+     */
+    public void setTitle(final String title) {
         this.title = title;
     }
 
+    /**
+     * @return year of apparition
+     */
     public int getYear() {
         return year;
     }
 
-    public void setYear(int year) {
+    /**
+     * @param year set year of apparition
+     */
+    public void setYear(final int year) {
         this.year = year;
     }
 
+    /**
+     * @return cast of the video
+     */
     public ArrayList<String> getCast() {
         return cast;
     }
 
-    public void setCast(ArrayList<String> cast) {
+    /**
+     * @param cast set cast of the video
+     */
+    public void setCast(final ArrayList<String> cast) {
         this.cast = cast;
     }
 
+    /**
+     * @return list of genres for the video
+     */
     public ArrayList<String> getGenres() {
         return genres;
     }
 
-    public void setGenres(ArrayList<String> genres) {
+    /**
+     * @param genres sets the genres list foor the video
+     */
+    public void setGenres(final ArrayList<String> genres) {
         this.genres = genres;
     }
 
-    @Override
-    public String toString() {
-        return "Video{" +
-                "name='" + title + '\'' +
-                ", year=" + year +
-                ", cast=" + cast +
-                ", genres=" + genres +
-                '}';
-    }
 
 }

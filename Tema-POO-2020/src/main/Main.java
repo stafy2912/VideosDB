@@ -4,7 +4,7 @@ import actor.Actor;
 import actor.ActorDB;
 import checker.Checkstyle;
 import checker.Checker;
-import commands.ComenziDB;
+import commands.CommandsDB;
 import common.Constants;
 import fileio.ActionInputData;
 import fileio.Input;
@@ -17,16 +17,20 @@ import video.Movie;
 import video.MovieDB;
 import video.Series;
 import video.SeriesDB;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * The entry point to this homework. It runs the checker that tests your implentation.
+ * The entry point to this homework. It runs the checker that tests your implementation.
  */
 public final class Main {
     /**
@@ -83,123 +87,200 @@ public final class Main {
 
 
         StringBuilder message = new StringBuilder();
-        ArrayList<User> user_list = new ArrayList<>();
-        UserDB users = new UserDB(user_list);
+        ArrayList<User> userlist = new ArrayList<>();
+        UserDB users = new UserDB(userlist);
         users.copy(input.getUsers());
-        users.find_favmovies(users, input.getMovies());
+        users.findfavmovies(users, input.getMovies());
         users.sortFavourite(users);
 
-        ArrayList<Movie> movie_list = new ArrayList<>();
-        MovieDB movies = new MovieDB(movie_list);
+        ArrayList<Movie> movielist = new ArrayList<>();
+        MovieDB movies = new MovieDB(movielist);
         movies.copy(input.getMovies());
 
-        ArrayList<Series> series_list = new ArrayList<>();
-        SeriesDB series = new SeriesDB(series_list);
+        ArrayList<Series> serieslist = new ArrayList<>();
+        SeriesDB series = new SeriesDB(serieslist);
         series.copy(input.getSerials());
 
-        ArrayList<ActionInputData> action_list = new ArrayList<>();
-        ComenziDB comm = new ComenziDB(action_list);
+        ArrayList<ActionInputData> actionlist = new ArrayList<>();
+        CommandsDB comm = new CommandsDB(actionlist);
         comm.copy(input.getCommands());
 
-        ArrayList<Actor> actor_list = new ArrayList<>();
-        HashMap<String, Double> actor_rating = new HashMap<>();
-        ActorDB actors = new ActorDB(actor_list, actor_rating);
+        ArrayList<Actor> actorlist = new ArrayList<>();
+        HashMap<String, Double> actorrating = new HashMap<>();
+        ActorDB actors = new ActorDB(actorlist, actorrating);
         actors.copy(input.getActors());
 
         int count = 0;
-        User wanted_user;
-        for (ActionInputData x : comm.getCom_list()) {
+        User wanteduser;
+        for (ActionInputData x : comm.getComlist()) {
             message.setLength(0);
 
-            switch (x.getActionType()) {
-                case "command":
-                    switch (x.getType()) {
-                        case "view" -> {
-                            wanted_user = users.search(x.getUsername());
-                            wanted_user.View(x.getTitle());
-                            message.append("success -> ");
-                            message.append(x.getTitle());
-                            message.append(" was viewed with total views of ");
-                            message.append(wanted_user.getHistory().get(x.getTitle()));
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
+            if ("command".equals(x.getActionType())) {
+                if ("view".equals(x.getType())) {
+                    wanteduser = users.search(x.getUsername());
+                    wanteduser.view(x.getTitle());
+                    message.append("success -> ");
+                    message.append(x.getTitle());
+                    message.append(" was viewed with total views of ");
+                    message.append(wanteduser.getHistory().get(x.getTitle()));
+                    //noinspection unchecked
+                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).getActionId(),
+                            "", message.toString()));
+                } else if ("favorite".equals(x.getType())) {
+                    wanteduser = users.search(x.getUsername());
+                    message.append(wanteduser.favorites(x.getTitle(), wanteduser));
+                    //noinspection unchecked
+                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).getActionId(),
+                            "", message.toString()));
+                } else if ("rating".equals(x.getType())) {
+                    wanteduser = users.search(x.getUsername());
+                    message.append(wanteduser.rating(wanteduser, x.getGrade(), x.getTitle(),
+                            x.getSeasonNumber(), movies));
+                    //noinspection unchecked
+                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).getActionId(),
+                            "", message.toString()));
+                    if (message.toString().contains("success")) {
+                        Movie dummymovie = movies.search(movies, x.getTitle());
+                        if (dummymovie != null) {
+                            dummymovie.setRating(dummymovie.getRating() + x.getGrade());
+                            dummymovie.setCounter(dummymovie.getCounter() + 1);
                         }
-                        case "favorite" -> {
-                            wanted_user = users.search(x.getUsername());
-                            message.append(wanted_user.Favorites(x.getTitle(), wanted_user));
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
+                        Series dummyseries = series.search(series, x.getTitle());
+                        if (dummyseries != null) {
+                            dummyseries.getSeasons().get(x.getSeasonNumber() - 1)
+                                    .getRatings().add(x.getGrade());
                         }
-                        case "rating" -> {
-                            wanted_user = users.search(x.getUsername());
-                            message.append(wanted_user.Rating(wanted_user, x.getGrade(), x.getTitle(), x.getSeasonNumber(), movies));
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                            if (message.toString().contains("success")) {
-                                Movie dummy_movie = movies.search(movies, x.getTitle());
-                                if (dummy_movie != null) {
-                                    dummy_movie.setRating(dummy_movie.getRating() + x.getGrade());
-                                    dummy_movie.setCounter(dummy_movie.getCounter() + 1);
-                                }
-                                Series dummy_series = series.search(series, x.getTitle());
-                                if (dummy_series != null) {
-                                    dummy_series.getSeasons().get(x.getSeasonNumber() - 1).getRatings().add(x.getGrade());
+                    }
+                }
+            } else if ("query".equals(x.getActionType())) {
+                if (x.getObjectType().equals("actors")) {
+                    if (x.getCriteria().equals("filter_description")) {
+                        message.append("Query result: [");
+                        actors.copynames(x.getFilters().get(2));
+                        int number = Math.min(actors.getActornames().size(), x.getNumber());
+                        Collections.sort(actors.getActornames());
+                        if (x.getSortType().equals("asc")) {
+                            for (String name : actors.getActornames()) {
+                                message.append(name);
+                                message.append(", ");
+                            }
+                        } else {
+                            for (int i = actors.getActornames().size() - 1;
+                                 i >= (actors.getActornames().size() - number); i--) {
+                                message.append(actors.getActornames().get(i));
+                                message.append(", ");
+                            }
+                        }
+                        if (!message.toString().equals("Query result: [")) {
+                            message.setLength(message.length() - 2);
+                        }
+                        message.append("]");
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter.writeFile(
+                                comm.getComlist().get(count).getActionId(),
+                                "", message.toString()));
+
+                    }
+                    if (x.getCriteria().equals("average")) {
+                        message.append("Query result: [");
+                        actors.restart(actors);
+                        for (Movie movie : movies.getMovielist()) {
+                            if (movie.getCounter() != 0) {
+                                for (String name : movie.getCast()) {
+                                    Actor dummyactor = actors.search(name);
+                                    if (dummyactor != null) {
+                                        dummyactor.setCounter(dummyactor.getCounter() + 1);
+                                        dummyactor.setRating(dummyactor.getRating()
+                                                + movie.gettruerating());
+                                    }
                                 }
                             }
                         }
-                    }
-                    break;
-                case "query":
-                    if (x.getObjectType().equals("actors")) {
-                        if (x.getCriteria().equals("filter_description")) {
-                            message.append("Query result: [");
-                            actors.copy_names(x.getFilters().get(2));
-                            int number = Math.min(actors.getActor_names().size(), x.getNumber());
-                            Collections.sort(actors.getActor_names());
-                            if (x.getSortType().equals("asc")) {
-                                for (String name : actors.getActor_names()) {
-                                    message.append(name);
+
+                        for (Series serie : series.getSerieslist()) {
+                            if (serie.gettruerating() != 0.0) {
+                                for (String name : serie.getCast()) {
+                                    Actor dummyactor = actors.search(name);
+                                    if (dummyactor != null) {
+                                        dummyactor.setCounter(dummyactor.getCounter() + 1);
+                                        dummyactor.setRating(dummyactor.getRating()
+                                                + serie.gettruerating());
+                                    }
+                                }
+                            }
+                        }
+                        actors.copyratings();
+                        actors.sortRatings(actors);
+                        ArrayList<String> keys = new ArrayList<>(actors.getActorrating().keySet());
+                        int number = Math.min(keys.size(), x.getNumber());
+                        if (x.getSortType().equals("asc")) {
+                            for (int i = 0; i < number; i++) {
+                                Object obj = keys.get(i);
+                                message.append(obj.toString());
+                                message.append(", ");
+                            }
+                        } else {
+                            if (number == keys.size()) {
+                                for (int i = keys.size() - 1; i >= (keys.size() - number); i--) {
+                                    Object obj = keys.get(i);
+                                    message.append(obj.toString());
                                     message.append(", ");
                                 }
                             } else {
-                                for (int i = actors.getActor_names().size() - 1; i >= (actors.getActor_names().size() - number); i--) {
-                                    message.append(actors.getActor_names().get(i));
+                                int i = 0;
+                                while (i != number) {
+                                    Object obj = keys.get(keys.size() - 1 - i);
+                                    message.append(obj.toString());
                                     message.append(", ");
+                                    i++;
                                 }
                             }
-                            if (!message.toString().equals("Query result: [")) {
-                                message.setLength(message.length() - 2);
-                            }
-                            message.append("]");
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-
                         }
-                        if (x.getCriteria().equals("average")) {
+                        message.setLength(message.length() - 2);
+                        message.append("]");
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter
+                                .writeFile(comm.getComlist().get(count).getActionId(),
+                                        "", message.toString()));
+                    }
+                    if (x.getCriteria().equals("awards")) {
+                        message.append("Query result: [");
+                        final int awardfilternumber = 3;
+                        List<String> prizes = x.getFilters().get(awardfilternumber);
+                        actors.copyawardactors(actors, prizes);
+                        actors.sortAwardsnumber(actors);
+                        List<String> keys = new ArrayList<>(actors.getactorawardsnmb().keySet());
+                        int number = Math.min(x.getNumber(), keys.size());
+                        if (x.getSortType().equals("asc")) {
+                            for (int i = 0; i < number; i++) {
+                                message.append(keys.get(i));
+                                message.append(", ");
+                            }
+                        } else {
+                            for (int i = keys.size() - 1; i >= (keys.size() - number); i--) {
+                                message.append(keys.get(i));
+                                message.append(", ");
+                            }
+                        }
+                        if (!message.toString().equals("Query result: [")) {
+                            message.setLength(message.length() - 2);
+                        }
+                        message.append("]");
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter.writeFile(comm.getComlist()
+                                .get(count).getActionId(), "", message.toString()));
+                    }
+                }
+                if (!"movies".equals(x.getObjectType())) {
+                    if ("shows".equals(x.getObjectType())) {
+                        if ("ratings".equals(x.getCriteria())) {
                             message.append("Query result: [");
-                            actors.restart(actors);
-                            for (Movie movie : movies.getMovie_list()) {
-                                if (movie.getCounter() != 0) {
-                                    for (String name : movie.getCast()) {
-                                        Actor actor_dummy = actors.search(name);
-                                        if (actor_dummy != null) {
-                                            actor_dummy.setCounter(actor_dummy.getCounter() + 1);
-                                            actor_dummy.setRating(actor_dummy.getRating() + movie.gettruerating());
-                                        }
-                                    }
-                                }
-                            }
-
-                            for (Series serie : series.getSeries_list()) {
-                                if (serie.gettruerating() != 0.0) {
-                                    for (String name : serie.getCast()) {
-                                        Actor actor_dummy = actors.search(name);
-                                        if (actor_dummy != null) {
-                                            actor_dummy.setCounter(actor_dummy.getCounter() + 1);
-                                            actor_dummy.setRating(actor_dummy.getRating() + serie.gettruerating());
-                                        }
-                                    }
-                                }
-                            }
-                            actors.copy_ratings();
-                            actors.sortRatings(actors);
-                            ArrayList<String> keys = new ArrayList<>(actors.getActor_rating().keySet());
+                            String year = x.getFilters().get(0).get(0);
+                            String genr = x.getFilters().get(1).get(0);
+                            series.copyratings(series, genr, year);
+                            series.sortratings(series);
+                            ArrayList<String> keys = new ArrayList<>(
+                                    series.getRatingslist().keySet());
                             int number = Math.min(keys.size(), x.getNumber());
                             if (x.getSortType().equals("asc")) {
                                 for (int i = 0; i < number; i++) {
@@ -208,40 +289,9 @@ public final class Main {
                                     message.append(", ");
                                 }
                             } else {
-                                if (number == keys.size()) {
-                                    for (int i = keys.size() - 1; i >= (keys.size() - number); i--) {
-                                        Object obj = keys.get(i);
-                                        message.append(obj.toString());
-                                        message.append(", ");
-                                    }
-                                } else {
-                                    int i = 0;
-                                    while (i != number) {
-                                        Object obj = keys.get(keys.size() - 1 - i);
-                                        message.append(obj.toString());
-                                        message.append(", ");
-                                        i++;
-                                    }
-                                }
-                            }
-                            message.setLength(message.length() - 2);
-                            message.append("]");
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                        }
-                        if (x.getCriteria().equals("awards")) {
-                            message.append("Query result: [");
-                            actors.copy_awdactorss(actors, x.getFilters().get(3));
-                            actors.sort_awardsnumber(actors);
-                            List<String> keys = new ArrayList<>(actors.getActor_awardsnmb().keySet());
-                            int number = Math.min(x.getNumber(), keys.size());
-                            if (x.getSortType().equals("asc")) {
-                                for (int i = 0; i < number; i++) {
-                                    message.append(keys.get(i));
-                                    message.append(", ");
-                                }
-                            } else {
-                                for (int i = keys.size() - 1; i >= (keys.size() - number); i--) {
-                                    message.append(keys.get(i));
+                                for (int i = keys.size() - 1; i >= 0; i--) {
+                                    Object obj = keys.get(i);
+                                    message.append(obj.toString());
                                     message.append(", ");
                                 }
                             }
@@ -249,426 +299,443 @@ public final class Main {
                                 message.setLength(message.length() - 2);
                             }
                             message.append("]");
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
+                            //noinspection unchecked
+                            arrayResult.add(fileWriter
+                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                            "", message.toString()));
+                        } else if ("longest".equals(x.getCriteria())) {
+                            message.append("Query result: [");
+                            String year = x.getFilters().get(0).get(0);
+                            String genr = x.getFilters().get(1).get(0);
+                            series.copyduration(series, genr, year);
+                            if (series.getDurationlist().size() != 0) {
+                                series.sortduration(series);
+                                ArrayList<String> keys1 = new ArrayList<>(
+                                        series.getDurationlist().keySet());
+                                int number = Math.min(keys1.size(), x.getNumber());
+                                if (x.getSortType().equals("asc")) {
+                                    for (int i = 0; i < number; i++) {
+                                        Object obj = keys1.get(i);
+                                        message.append(obj.toString());
+                                        message.append(", ");
+                                    }
+                                } else {
+                                    for (int i = number - 1; i >= 0; i--) {
+                                        Object obj = keys1.get(i);
+                                        message.append(obj.toString());
+                                        message.append(", ");
+                                    }
+                                }
+                                if (!message.toString().equals("Query result: [")) {
+                                    message.setLength(message.length() - 2);
+                                }
+                            }
+                            message.append("]");
+                            //noinspection unchecked
+                            arrayResult.add(fileWriter
+                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                            "", message.toString()));
+                        } else if ("most_viewed".equals(x.getCriteria())) {
+                            message.append("Query result: [");
+                            String year = x.getFilters().get(0).get(0);
+                            String genr = x.getFilters().get(1).get(0);
+                            series.copyviews(users, series, genr, year);
+                            series.sortviewslist(series);
+
+                            ArrayList<String> keys = new ArrayList<>(
+                                    series.getViewslist().keySet());
+                            int number = Math.min(x.getNumber(), keys.size());
+                            if (x.getSortType().equals("asc")) {
+                                for (int i = 0; i < number; i++) {
+                                    message.append(keys.get(i));
+                                    message.append(", ");
+                                }
+                            } else {
+                                for (int i = number - 1; i >= 0; i--) {
+                                    message.append(keys.get(i));
+                                    message.append(", ");
+                                }
+
+                            }
+                            if (!message.toString().equals("Query result: [")) {
+                                message.setLength(message.length() - 2);
+                            }
+                            message.append("]");
+                            //noinspection unchecked
+                            arrayResult.add(fileWriter
+                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                            "", message.toString()));
+                            series.getFavoritetitles().clear();
+                        } else if ("favorite".equals(x.getCriteria())) {
+                            message.append("Query result: [");
+                            String year = x.getFilters().get(0).get(0);
+                            String genr = x.getFilters().get(1).get(0);
+                            series.copyfavoritestitle(series, users, genr, year);
+                            series.sortfavoritetitles(series);
+                            ArrayList<String> keys = new ArrayList<>(
+                                    series.getFavoritetitles().keySet());
+                            if (keys.size() != 0) {
+                                int number = Math.min(x.getNumber(), keys.size());
+                                if (x.getSortType().equals("asc")) {
+                                    for (int i = 0; i < number; i++) {
+                                        Object obj = keys.get(i);
+                                        message.append(obj.toString());
+                                        message.append(", ");
+                                    }
+                                } else {
+                                    for (int i = number - 1; i >= 0; i--) {
+                                        Object obj = keys.get(i);
+                                        message.append(obj.toString());
+                                        message.append(", ");
+                                    }
+                                }
+                                message.setLength(message.length() - 2);
+                            }
+                            message.append("]");
+                            //noinspection unchecked
+                            arrayResult.add(fileWriter
+                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                            "", message.toString()));
+                        }
+                    } else if ("users".equals(x.getObjectType())) {
+                        if (x.getCriteria().equals("num_ratings")) {
+                            message.append("Query result: [");
+                            users.copynumactions(users);
+                            users.sortnoactions(users);
+                            ArrayList<String> keys = new ArrayList<>(
+                                    users.getActionslist().keySet());
+                            int number = Math.min(x.getNumber(), keys.size());
+                            if (keys.size() != 0) {
+                                if (x.getSortType().equals("asc")) {
+                                    for (int i = 0; i < number; i++) {
+                                        message.append(keys.get(i));
+                                        message.append(", ");
+                                    }
+                                } else {
+                                    int i = 0;
+                                    while (i != number) {
+                                        message.append(keys.get(keys.size() - 1 - i));
+                                        message.append(", ");
+                                        i++;
+                                    }
+                                }
+                                message.setLength(message.length() - 2);
+                            }
+                            message.append("]");
+                            //noinspection unchecked
+                            arrayResult.add(fileWriter
+                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                            "", message.toString()));
                         }
                     }
-                    switch (x.getObjectType()) {
-                        case "movies":
-                            switch (x.getCriteria()) {
-                                case "ratings" -> {
-                                    message.append("Query result: [");
-                                    String year = x.getFilters().get(0).get(0);
-                                    String genr = x.getFilters().get(1).get(0);
-                                    movies.copy_ratings(movies, genr, year);
-                                    movies.sortrating_list(movies);
-                                    ArrayList<String> keys = new ArrayList<>(movies.getRating_list().keySet());
-                                    int number = Math.min(keys.size(), x.getNumber());
-                                    if (x.getSortType().equals("asc")) {
-                                        for (int i = 0; i < number; i++) {
-                                            Object obj = keys.get(i);
-                                            message.append(obj.toString());
-                                            message.append(", ");
-                                        }
-                                    } else {
-                                        for (int i = number - 1; i == 0; i--) {
-                                            Object obj = keys.get(i);
-                                            message.append(obj.toString());
-                                            message.append(", ");
-                                        }
-                                    }
-                                    if (!message.toString().equals("Query result: [")) {
-                                        message.setLength(message.length() - 2);
-                                    }
-                                    message.append("]");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
+                } else {
+                    if ("ratings".equals(x.getCriteria())) {
+                        message.append("Query result: [");
+                        String year = x.getFilters().get(0).get(0);
+                        String genr = x.getFilters().get(1).get(0);
+                        movies.copyratings(movies, genr, year);
+                        movies.sortratinglist(movies);
+                        ArrayList<String> keys = new ArrayList<>(
+                                movies.getRatinglist().keySet());
+                        int number = Math.min(keys.size(), x.getNumber());
+                        if (x.getSortType().equals("asc")) {
+                            for (int i = 0; i < number; i++) {
+                                Object obj = keys.get(i);
+                                message.append(obj.toString());
+                                message.append(", ");
+                            }
+                        } else {
+                            for (int i = number - 1; i == 0; i--) {
+                                Object obj = keys.get(i);
+                                message.append(obj.toString());
+                                message.append(", ");
+                            }
+                        }
+                        if (!message.toString().equals("Query result: [")) {
+                            message.setLength(message.length() - 2);
+                        }
+                        message.append("]");
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count)
+                                .getActionId(), "", message.toString()));
+                    } else if ("longest".equals(x.getCriteria())) {
+                        message.append("Query result: [");
+                        String year = x.getFilters().get(0).get(0);
+                        String genr = x.getFilters().get(1).get(0);
+                        movies.copyduration(movies, genr, year);
+                        movies.sortdurationlist(movies);
+                        ArrayList<String> keys = new ArrayList<>(movies.getDurationlist()
+                                .keySet());
+                        int number = Math.min(keys.size(), x.getNumber());
+                        if (x.getSortType().equals("asc")) {
+                            for (int i = 0; i < number; i++) {
+                                Object obj = keys.get(i);
+                                message.append(obj.toString());
+                                message.append(", ");
+                            }
+                        } else {
+                            for (int i = keys.size() - 1; i >= (keys.size() - number); i--) {
+                                Object obj = keys.get(i);
+                                message.append(obj.toString());
+                                message.append(", ");
+                            }
+                        }
+                        if (!message.toString().equals("Query result: [")) {
+                            message.setLength(message.length() - 2);
+                        }
+                        message.append("]");
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter.writeFile(
+                                comm.getComlist().get(count).getActionId(),
+                                "", message.toString()));
+                    } else if ("most_viewed".equals(x.getCriteria())) {
+                        message.append("Query result: [");
+                        String year = x.getFilters().get(0).get(0);
+                        String genr = x.getFilters().get(1).get(0);
+                        movies.copyviews(users, movies, genr, year);
+                        movies.sortViewslist(movies);
+                        ArrayList<String> keys = new ArrayList<>(movies.getViewslist().keySet());
+                        int number = Math.min(keys.size(), x.getNumber());
+                        if (x.getSortType().equals("asc")) {
+                            for (int i = 0; i < number; i++) {
+                                Object obj = keys.get(i);
+                                message.append(obj.toString());
+                                message.append(", ");
+                            }
+                        } else {
+                            for (int i = keys.size() - 1; i >= (keys.size() - number); i--) {
+                                Object obj = keys.get(i);
+                                message.append(obj.toString());
+                                message.append(", ");
+                            }
+                        }
+                        message.setLength(message.length() - 2);
+                        message.append("]");
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter.writeFile(
+                                comm.getComlist().get(count).getActionId(),
+                                "", message.toString()));
+                    } else if ("favorite".equals(x.getCriteria())) {
+                        message.append("Query result: [");
+                        String year = x.getFilters().get(0).get(0);
+                        String genr = x.getFilters().get(1).get(0);
+                        movies.copyfavoritestitle(movies, users, genr, year);
+                        movies.sortfavoritetitles(movies);
+                        if (movies.getFavoritestitle().size() != 0) {
+                            ArrayList<String> keys = new ArrayList<>(
+                                    movies.getFavoritestitle().keySet());
+                            if (x.getSortType().equals("asc")) {
+                                for (Object obj : keys) {
+                                    message.append(obj.toString());
+                                    message.append(", ");
                                 }
-                                case "longest" -> {
-                                    message.append("Query result: [");
-                                    String year = x.getFilters().get(0).get(0);
-                                    String genr = x.getFilters().get(1).get(0);
-                                    movies.copy_duration(movies, genr, year);
-                                    movies.sortduration_list(movies);
-                                    ArrayList<String> keys = new ArrayList<>(movies.getDuration_list().keySet());
-                                    int number = Math.min(keys.size(), x.getNumber());
-                                    if (x.getSortType().equals("asc")) {
-                                        for (int i = 0; i < number; i++) {
-                                            Object obj = keys.get(i);
-                                            message.append(obj.toString());
-                                            message.append(", ");
-                                        }
-                                    } else {
-                                        for (int i = keys.size() - 1; i >= (keys.size() - number); i--) {
-                                            Object obj = keys.get(i);
-                                            message.append(obj.toString());
-                                            message.append(", ");
-                                        }
-                                    }
-                                    if (!message.toString().equals("Query result: [")) {
-                                        message.setLength(message.length() - 2);
-                                    }
-                                    message.append("]");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                }
-                                case "most_viewed" -> {
-                                    message.append("Query result: [");
-                                    String year = x.getFilters().get(0).get(0);
-                                    String genr = x.getFilters().get(1).get(0);
-                                    movies.copy_views(users, movies, genr, year);
-                                    movies.sortviews_list(movies);
-                                    ArrayList<String> keys = new ArrayList<>(movies.getViews_list().keySet());
-                                    int number = Math.min(keys.size(), x.getNumber());
-                                    if (x.getSortType().equals("asc")) {
-                                        for (int i = 0; i < number; i++) {
-                                            Object obj = keys.get(i);
-                                            message.append(obj.toString());
-                                            message.append(", ");
-                                        }
-                                    } else {
-                                        for (int i = keys.size() - 1; i >= (keys.size() - number); i--) {
-                                            Object obj = keys.get(i);
-                                            message.append(obj.toString());
-                                            message.append(", ");
-                                        }
-                                    }
-                                    message.setLength(message.length() - 2);
-                                    message.append("]");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                }
-                                case "favorite" -> {
-                                    message.append("Query result: [");
-                                    String year = x.getFilters().get(0).get(0);
-                                    String genr = x.getFilters().get(1).get(0);
-                                    movies.copy_favoritestitle(movies, users, genr, year);
-                                    movies.sort_favoritetitles(movies);
-                                    if (movies.getFavorites_title().size() != 0) {
-                                        ArrayList<String> keys = new ArrayList<>(movies.getFavorites_title().keySet());
-                                        if (x.getSortType().equals("asc")) {
-                                            for (Object obj : keys) {
-                                                message.append(obj.toString());
-                                                message.append(", ");
-                                            }
-                                        } else {
-                                            for (int i = keys.size() - 1; i >= 0; i--) {
-                                                Object obj = keys.get(i);
-                                                message.append(obj.toString());
-                                                message.append(", ");
-                                            }
-                                        }
-                                        message.setLength(message.length() - 2);
-                                    }
-                                    message.append("]");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
+                            } else {
+                                for (int i = keys.size() - 1; i >= 0; i--) {
+                                    Object obj = keys.get(i);
+                                    message.append(obj.toString());
+                                    message.append(", ");
                                 }
                             }
-                            break;
-                        case "shows":
-                            switch (x.getCriteria()) {
-                                case "ratings" -> {
-                                    message.append("Query result: [");
-                                    String year = x.getFilters().get(0).get(0);
-                                    String genr = x.getFilters().get(1).get(0);
-                                    series.copy_ratings(series, genr, year);
-                                    series.sort_ratings(series);
-                                    ArrayList<String> keys = new ArrayList<>(series.getRatings_list().keySet());
-                                    int number = Math.min(keys.size(), x.getNumber());
-                                    if (x.getSortType().equals("asc")) {
-                                        for (int i = 0; i < number; i++) {
-                                            Object obj = keys.get(i);
-                                            message.append(obj.toString());
-                                            message.append(", ");
-                                        }
-                                    } else {
-                                        for (int i = keys.size() - 1; i >= 0; i--) {
-                                            Object obj = keys.get(i);
-                                            message.append(obj.toString());
-                                            message.append(", ");
-                                        }
-                                    }
-                                    if (!message.toString().equals("Query result: [")) {
-                                        message.setLength(message.length() - 2);
-                                    }
-                                    message.append("]");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                }
-                                case "longest" -> {
-                                    message.append("Query result: [");
-                                    String year = x.getFilters().get(0).get(0);
-                                    String genr = x.getFilters().get(1).get(0);
-                                    series.copy_duration(series, genr, year);
-                                    if (series.getDuration_list().size() != 0) {
-                                        series.sort_duration(series);
-                                        ArrayList<String> keys1 = new ArrayList<>(series.getDuration_list().keySet());
-                                        int number = Math.min(keys1.size(), x.getNumber());
-                                        if (x.getSortType().equals("asc")) {
-                                            for (int i = 0; i < number; i++) {
-                                                Object obj = keys1.get(i);
-                                                message.append(obj.toString());
-                                                message.append(", ");
-                                            }
-                                        } else {
-                                            for (int i = number - 1; i >= 0; i--) {
-                                                Object obj = keys1.get(i);
-                                                message.append(obj.toString());
-                                                message.append(", ");
-                                            }
-                                        }
-                                        if (!message.toString().equals("Query result: [")) {
-                                            message.setLength(message.length() - 2);
-                                        }
-                                    }
-                                    message.append("]");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                }
-                                case "most_viewed" -> {
-                                    message.append("Query result: [");
-                                    String year = x.getFilters().get(0).get(0);
-                                    String genr = x.getFilters().get(1).get(0);
-                                    series.copy_views(users, series, genr, year);
-                                    series.sortviews_list(series);
-
-                                    ArrayList<String> keys = new ArrayList<>(series.getViews_list().keySet());
-                                    int number = Math.min(x.getNumber(), keys.size());
-                                    if (x.getSortType().equals("asc")) {
-                                        for (int i = 0; i < number; i++) {
-                                            message.append(keys.get(i));
-                                            message.append(", ");
-                                        }
-                                    } else {
-                                        for (int i = number - 1; i >= 0; i--) {
-                                            message.append(keys.get(i));
-                                            message.append(", ");
-                                        }
-
-                                    }
-                                    if (!message.toString().equals("Query result: [")) {
-                                        message.setLength(message.length() - 2);
-                                    }
-                                    message.append("]");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                    series.getFavorite_titles().clear();
-                                }
-                                case "favorite" -> {
-                                    message.append("Query result: [");
-                                    String year = x.getFilters().get(0).get(0);
-                                    String genr = x.getFilters().get(1).get(0);
-                                    series.copy_favoritestitle(series, users, genr, year);
-                                    series.sort_favoritetitles(series);
-                                    ArrayList<String> keys = new ArrayList<>(series.getFavorite_titles().keySet());
-                                    if (keys.size() != 0) {
-                                        int number = Math.min(x.getNumber(), keys.size());
-                                        if (x.getSortType().equals("asc")) {
-                                            for (int i = 0; i < number; i++) {
-                                                Object obj = keys.get(i);
-                                                message.append(obj.toString());
-                                                message.append(", ");
-                                            }
-                                        } else {
-                                            for (int i = number - 1; i >= 0; i--) {
-                                                Object obj = keys.get(i);
-                                                message.append(obj.toString());
-                                                message.append(", ");
-                                            }
-                                        }
-                                        message.setLength(message.length() - 2);
-                                    }
-                                    message.append("]");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-
-                                }
-                            }
-                            break;
-                        case "users":
-                            if (x.getCriteria().equals("num_ratings")) {
-                                message.append("Query result: [");
-                                users.copy_numactions(users);
-                                users.sortnoactions(users);
-                                ArrayList<String> keys = new ArrayList<>(users.getActions_list().keySet());
-                                int number = Math.min(x.getNumber(), keys.size());
-                                if (keys.size() != 0) {
-                                    if (x.getSortType().equals("asc")) {
-                                        for (int i = 0; i < number; i++) {
-                                            message.append(keys.get(i));
-                                            message.append(", ");
-                                        }
-                                    } else {
-                                        int i = 0;
-                                        while (i != number) {
-                                            message.append(keys.get(keys.size() - 1 - i));
-                                            message.append(", ");
-                                            i++;
-                                        }
-                                    }
-                                    message.setLength(message.length() - 2);
-                                }
-                                message.append("]");
-                                arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                            }
-                            break;
+                            message.setLength(message.length() - 2);
+                        }
+                        message.append("]");
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter
+                                .writeFile(comm.getComlist().get(count).getActionId(),
+                                        "", message.toString()));
                     }
-                    break;
-                case "recommendation":
-                    switch (x.getType()) {
-                        case "standard" -> {
-                            message.append("StandardRecommendation");
-                            User wanted = users.search(x.getUsername());
-                            boolean ok = true;
-                            for (Movie movie : movies.getMovie_list()) {
-                                if (ok && !wanted.getHistory().containsKey(movie.getTitle())) {
-                                    message.append(" result: ");
-                                    message.append(movie.getTitle());
-                                    ok = false;
-                                }
+                }
+            } else if ("recommendation".equals(x.getActionType())) {
+                if ("standard".equals(x.getType())) {
+                    message.append("StandardRecommendation");
+                    User wanted = users.search(x.getUsername());
+                    boolean ok = true;
+                    for (Movie movie : movies.getMovielist()) {
+                        if (ok && !wanted.getHistory().containsKey(movie.getTitle())) {
+                            message.append(" result: ");
+                            message.append(movie.getTitle());
+                            ok = false;
+                        }
+                    }
+                    for (Series seriesx : series.getSerieslist()) {
+                        if (ok && !wanted.getHistory().containsKey(seriesx.getTitle())) {
+                            message.append(" result: ");
+                            message.append(seriesx.getTitle());
+                            ok = false;
+                        }
+                    }
+                    if (ok) {
+                        message.setLength(0);
+                        message.append("StandardRecommendation cannot be applied!");
+                    }
+                    //noinspection unchecked
+                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).getActionId(),
+                            "", message.toString()));
+                } else if ("best_unseen".equals(x.getType())) {
+                    User wanted = users.search(x.getUsername());
+                    wanted.copyshowsratings(movies, series, wanted);
+                    wanted.sortshowsratings(wanted);
+                    if (wanted.getShowsratings().size() != 0) {
+                        message.append("BestRatedUnseenRecommendation result: ");
+                        ArrayList<String> keys = new ArrayList<>(wanted.getShowsratings().keySet());
+                        message.append(keys.get(keys.size() - 1));
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter
+                                .writeFile(comm.getComlist().get(count).getActionId(),
+                                        "", message.toString()));
+                    } else {
+                        boolean ok = false;
+                        for (Movie movie : movies.getMovielist()) {
+                            if (!ok && !wanted.getHistory().containsKey(movie.getTitle())) {
+                                message.append("BestRatedUnseenRecommendation result: ");
+                                message.append(movie.getTitle());
+                                //noinspection unchecked
+                                arrayResult.add(fileWriter
+                                        .writeFile(comm.getComlist().get(count).getActionId(),
+                                                "", message.toString()));
+                                ok = true;
                             }
-                            for (Series seriesx : series.getSeries_list()) {
-                                if (ok && !wanted.getHistory().containsKey(seriesx.getTitle())) {
-                                    message.append(" result: ");
-                                    message.append(seriesx.getTitle());
-                                    ok = false;
+                        }
+                        for (Series serie : series.getSerieslist()) {
+                            if (!ok && !wanted.getHistory().containsKey(serie.getTitle())) {
+                                message.append("BestRatedUnseenRecommendation result: ");
+                                message.append(serie.getTitle());
+                                //noinspection unchecked
+                                arrayResult.add(fileWriter
+                                        .writeFile(comm.getComlist().get(count).getActionId(),
+                                                "", message.toString()));
+                                ok = true;
+                            }
+                        }
+                        if (!ok) {
+                            message.append("BestRatedUnseenRecommendation cannot be applied!");
+                            //noinspection unchecked
+                            arrayResult.add(fileWriter
+                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                            "", message.toString()));
+
+                        }
+                    }
+                } else if ("popular".equals(x.getType())) {
+                    User wanted = users.search(x.getUsername());
+                    if (!wanted.getSubscriptionType().equals("PREMIUM")) {
+                        message.append("PopularRecommendation cannot be applied!");
+                        //noinspection unchecked
+                        arrayResult.add(fileWriter
+                                .writeFile(comm.getComlist().get(count).getActionId(),
+                                        "", message.toString()));
+                    } else {
+                        users.copygenrelist(movies, series);
+                        users.sortgenreslist(users);
+                        ArrayList<String> keys = new ArrayList<>(users.getGenrelist().keySet());
+                        if (keys.size() == 0) {
+                            message.append("PopularRecommendation cannot be applied!");
+                            //noinspection unchecked
+                            arrayResult.add(fileWriter
+                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                            "", message.toString()));
+                        } else {
+                            boolean ok = true;
+                            for (int j = keys.size() - 1; j >= 0; j--) {
+                                for (Movie movie : movies.getMovielist()) {
+                                    if (ok && !wanted.getHistory().containsKey(movie.getTitle())
+                                            && movie.getGenres().contains(keys.get(j))) {
+                                        message.append("PopularRecommendation result: ");
+                                        message.append(movie.getTitle());
+                                        //noinspection unchecked
+                                        arrayResult.add(fileWriter.writeFile(comm.getComlist()
+                                                .get(count).getActionId(), "", message.toString()));
+                                        ok = false;
+                                    }
+                                }
+                                if (ok) {
+                                    for (Series serie : series.getSerieslist()) {
+                                        if (ok && !wanted.getHistory().containsKey(serie.getTitle())
+                                                && serie.getGenres().contains(keys.get(j))) {
+                                            message.append("PopularRecommendation result: ");
+                                            message.append(serie.getTitle());
+                                            //noinspection unchecked
+                                            arrayResult.add(fileWriter
+                                                    .writeFile(comm.getComlist().get(count)
+                                                            .getActionId(), "", message.toString()));
+                                            ok = false;
+                                        }
+                                    }
                                 }
                             }
                             if (ok) {
                                 message.setLength(0);
-                                message.append("StandardRecommendation cannot be applied!");
-                            }
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-
-                        }
-                        case "best_unseen" -> {
-                            User wanted = users.search(x.getUsername());
-                            wanted.copy_showsratings(movies, series, wanted);
-                            wanted.sort_showsratings(wanted);
-                            if (wanted.getShows_ratings().size() != 0) {
-                                message.append("BestRatedUnseenRecommendation result: ");
-                                ArrayList<String> keys = new ArrayList<>(wanted.getShows_ratings().keySet());
-                                message.append(keys.get(keys.size() - 1));
-                                arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                            } else {
-                                boolean ok = false;
-                                for (Movie movie : movies.getMovie_list()) {
-                                    if (!ok && !wanted.getHistory().containsKey(movie.getTitle())) {
-                                        message.append("BestRatedUnseenRecommendation result: ");
-                                        message.append(movie.getTitle());
-                                        arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                        ok = true;
-                                    }
-                                }
-                                for (Series serie : series.getSeries_list()) {
-                                    if (!ok && !wanted.getHistory().containsKey(serie.getTitle())) {
-                                        message.append("BestRatedUnseenRecommendation result: ");
-                                        message.append(serie.getTitle());
-                                        arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                        ok = true;
-                                    }
-                                }
-                                if (!ok) {
-                                    message.append("BestRatedUnseenRecommendation cannot be applied!");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-
-                                }
-                            }
-                        }
-                        case "popular" -> {
-                            User wanted = users.search(x.getUsername());
-                            if (!wanted.getSubscriptionType().equals("PREMIUM")) {
                                 message.append("PopularRecommendation cannot be applied!");
-                                arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                            } else {
-                                users.copy_genre_list(movies, series);
-                                users.sort_genres_list(users);
-                                ArrayList<String> keys = new ArrayList<>(users.getGenre_list().keySet());
-                                if (keys.size() == 0) {
-                                    message.append("PopularRecommendation cannot be applied!");
-                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                } else {
-                                    boolean ok = true;
-                                    for (int j = keys.size() - 1; j >= 0; j--) {
-                                        for (Movie movie : movies.getMovie_list()) {
-                                            if (ok && !wanted.getHistory().containsKey(movie.getTitle()) && movie.getGenres().contains(keys.get(j))) {
-                                                message.append("PopularRecommendation result: ");
-                                                message.append(movie.getTitle());
-                                                arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                                ok = false;
-                                            }
-                                        }
-                                        if (ok) {
-                                            for (Series serie : series.getSeries_list()) {
-                                                if (ok && !wanted.getHistory().containsKey(serie.getTitle()) && serie.getGenres().contains(keys.get(j))) {
-                                                    message.append("PopularRecommendation result: ");
-                                                    message.append(serie.getTitle());
-                                                    arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                                    ok = false;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (ok) {
-                                        message.setLength(0);
-                                        message.append("PopularRecommendation cannot be applied!");
-                                        arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                                    }
-                                }
+                                //noinspection unchecked
+                                arrayResult.add(fileWriter
+                                        .writeFile(comm.getComlist().get(count).getActionId(),
+                                                "", message.toString()));
                             }
-                        }
-                        case "favorite" -> {
-                            User wanted = users.search(x.getUsername());
-                            if (!wanted.getSubscriptionType().equals("PREMIUM")) {
-                                message.append("FavoriteRecommendation cannot be applied!");
-                            } else {
-                                users.copy_favorites(users, wanted);
-                                users.sort_favorit(users);
-                                ArrayList<String> keys = new ArrayList<>(users.getFavorites().keySet());
-                                ArrayList<Integer> values = new ArrayList<>(users.getFavorites().values());
-                                if (keys.size() == 0) {
-                                    message.append("FavoriteRecommendation cannot be applied!");
-                                } else {
-                                    if (values.size() == 1) {
-                                        message.append("FavoriteRecommendation result: ");
-                                        message.append(keys.get(keys.size() - 1));
-                                    } else if (values.size() >= 2) {
-                                        if (!values.get(values.size() - 1).equals(values.get(values.size() - 2))) {
-                                            message.append("FavoriteRecommendation result: ");
-                                            message.append(keys.get(keys.size() - 1));
-                                        } else {
-                                            boolean ok = false;
-                                            for (Movie movie : movies.getMovie_list()) {
-                                                if (!ok && movie.get_nofavorites(users) == values.get(values.size() - 1)) {
-                                                    message.append("FavoriteRecommendation result: ");
-                                                    message.append(movie.getTitle());
-                                                    ok = true;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
-                        }
-                        case "search" -> {
-                            User wanted = users.search(x.getUsername());
-                            if (!wanted.getSubscriptionType().equals("PREMIUM")) {
-                                message.append("SearchRecommendation cannot be applied!");
-                            } else {
-                                message.append("SearchRecommendation result: [");
-                                String gen = x.getGenre();
-                                wanted.copy_ratingsgenre(wanted, movies, series, gen);
-                                wanted.sort_ratingsgenre(wanted);
-                                ArrayList<String> keys = new ArrayList<>(wanted.getRatings_genre().keySet());
-                                if (keys.size() == 0) {
-                                    message.setLength(0);
-                                    message.append("SearchRecommendation cannot be applied!");
-                                } else {
-                                    for (Object obj : keys) {
-                                        message.append(obj.toString());
-                                        message.append(", ");
-                                    }
-                                    message.setLength(message.length() - 2);
-                                    message.append("]");
-                                }
-                            }
-                            arrayResult.add(fileWriter.writeFile(comm.getCom_list().get(count).getActionId(), "", message.toString()));
                         }
                     }
-                    break;
+                } else if ("favorite".equals(x.getType())) {
+                    User wanted = users.search(x.getUsername());
+                    if (!wanted.getSubscriptionType().equals("PREMIUM")) {
+                        message.append("FavoriteRecommendation cannot be applied!");
+                    } else {
+                        users.copyfavorites(users, wanted);
+                        users.sortfavorite(users);
+                        ArrayList<String> keys = new ArrayList<>(users.getFavorites().keySet());
+                        ArrayList<Integer> values = new ArrayList<>(users.getFavorites().values());
+                        if (keys.size() == 0) {
+                            message.append("FavoriteRecommendation cannot be applied!");
+                        } else {
+                            if (values.size() == 1) {
+                                message.append("FavoriteRecommendation result: ");
+                                message.append(keys.get(keys.size() - 1));
+                            } else if (values.size() >= 2) {
+                                if (!values.get(values.size() - 1)
+                                        .equals(values.get(values.size() - 2))) {
+                                    message.append("FavoriteRecommendation result: ");
+                                    message.append(keys.get(keys.size() - 1));
+                                } else {
+                                    boolean ok = false;
+                                    for (Movie movie : movies.getMovielist()) {
+                                        if (!ok && movie.getnmbfavorites(users)
+                                                == values.get(values.size() - 1)) {
+                                            message.append("FavoriteRecommendation result: ");
+                                            message.append(movie.getTitle());
+                                            ok = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //noinspection unchecked
+                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).
+                            getActionId(), "", message.toString()));
+                } else if ("search".equals(x.getType())) {
+                    User wanted = users.search(x.getUsername());
+                    if (!wanted.getSubscriptionType().equals("PREMIUM")) {
+                        message.append("SearchRecommendation cannot be applied!");
+                    } else {
+                        message.append("SearchRecommendation result: [");
+                        String gen = x.getGenre();
+                        wanted.copyratingsgenre(wanted, movies, series, gen);
+                        wanted.sortratingsgenre(wanted);
+                        ArrayList<String> keys = new ArrayList<>(wanted.getRatingsgenre().keySet());
+                        if (keys.size() == 0) {
+                            message.setLength(0);
+                            message.append("SearchRecommendation cannot be applied!");
+                        } else {
+                            for (Object obj : keys) {
+                                message.append(obj.toString());
+                                message.append(", ");
+                            }
+                            message.setLength(message.length() - 2);
+                            message.append("]");
+                        }
+                    }
+                    //noinspection unchecked
+                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).
+                            getActionId(), "", message.toString()));
+                }
             }
             count++;
         }

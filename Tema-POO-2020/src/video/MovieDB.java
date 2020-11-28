@@ -4,104 +4,127 @@ import fileio.MovieInputData;
 import user.User;
 import user.UserDB;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
-public class MovieDB {
+public final class MovieDB {
 
-    public HashMap<String, Integer> getFavorites_title() {
-        return favorites_title;
+    public HashMap<String, Integer> getFavoritestitle() {
+        return favoritestitle;
     }
 
-    public void setFavorites_title(HashMap<String, Integer> favorites_title) {
-        this.favorites_title = favorites_title;
+    public void setFavoritestitle(final HashMap<String, Integer> favoritestitle1) {
+        this.favoritestitle = favoritestitle1;
     }
 
-    private HashMap<String, Integer> views_list;
+    private HashMap<String, Integer> viewslist;
 
-    private ArrayList<Movie> movie_list;
+    private final ArrayList<Movie> movielist;
 
-    private HashMap<String, Double> rating_list;
+    private HashMap<String, Double> ratinglist;
 
-    private HashMap<String, Integer> duration_list;
+    private HashMap<String, Integer> durationlist;
 
-    private HashMap<String, Integer> favorites_title;
+    private HashMap<String, Integer> favoritestitle;
 
-    public HashMap<String, Integer> getViews_list() {
-        return views_list;
+    public HashMap<String, Integer> getViewslist() {
+        return viewslist;
     }
 
-    public void setViews_list(HashMap<String, Integer> views_list) {
-        this.views_list = views_list;
+    public void setViewslist(final HashMap<String, Integer> viewslist1) {
+        this.viewslist = viewslist1;
     }
 
-    public HashMap<String, Integer> getDuration_list() {
-        return duration_list;
+    public HashMap<String, Integer> getDurationlist() {
+        return durationlist;
     }
 
-    public void setDuration_list(HashMap<String, Integer> duration_list) {
-        this.duration_list = duration_list;
+    public void setDurationlist(final HashMap<String, Integer> durationlist1) {
+        this.durationlist = durationlist1;
     }
 
-    public HashMap<String, Double> getRating_list() {
-        return rating_list;
+    public HashMap<String, Double> getRatinglist() {
+        return ratinglist;
     }
 
-    public void setRating_list(HashMap<String, Double> rating_list) {
-        this.rating_list = rating_list;
+    public void setRatinglist(final HashMap<String, Double> ratinglist1) {
+        this.ratinglist = ratinglist1;
     }
 
-    public ArrayList<Movie> getMovie_list() {
-        return movie_list;
+    public ArrayList<Movie> getMovielist() {
+        return movielist;
     }
 
-    public void setMovie_list(ArrayList<Movie> movie_list) {
-        this.movie_list = movie_list;
+    public MovieDB(final ArrayList<Movie> list) {
+        movielist = list;
     }
 
-    public MovieDB(ArrayList<Movie> list) {
-        movie_list = list;
-    }
+    /**
+     * @param datalist movieinput data base
+     *                 creating my own movie data base
+     */
+    public void copy(final List<MovieInputData> datalist) {
+        Movie buffermovie;
+        for (MovieInputData moviex : datalist) {
 
-    public void copy(List<MovieInputData> data_list) {
-        Movie buffer_movie;
-        for (MovieInputData moviex : data_list) {
-
-            buffer_movie = new Movie(moviex);
-            movie_list.add(buffer_movie);
+            buffermovie = new Movie(moviex);
+            movielist.add(buffermovie);
         }
-        this.views_list = new HashMap<>();
+        this.viewslist = new HashMap<>();
 
-        this.rating_list = new HashMap<>();
-        this.duration_list = new HashMap<>();
-        this.favorites_title = new HashMap<>();
+        this.ratinglist = new HashMap<>();
+        this.durationlist = new HashMap<>();
+        this.favoritestitle = new HashMap<>();
     }
 
-    public Movie search(MovieDB movies, String Name) {
+    /**
+     * @param movies the movies data base
+     * @param name   the name data base
+     * @return the wanted movie, or null if not found
+     */
+    public Movie search(final MovieDB movies, final String name) {
         Movie dummy = null;
-        for (Movie movie : movies.getMovie_list()) {
-            if (movie.getTitle().equals(Name)) {
+        for (Movie movie : movies.getMovielist()) {
+            if (movie.getTitle().equals(name)) {
                 dummy = movie;
             }
         }
         return dummy;
     }
 
-    public void copy_ratings(MovieDB movies, String gen, String year) {
+    /**
+     * @param movies the movies data base
+     * @param gen    the filter genre
+     * @param year   the filter year
+     *               creates a hashmap of <movie name><movie ratings>
+     */
+    public void copyratings(final MovieDB movies, final String gen,
+                            final String year) {
         boolean ok;
-        movies.getRating_list().clear();
-        for (Movie movie : movies.getMovie_list()) {
+        movies.getRatinglist().clear();
+        for (Movie movie : movies.getMovielist()) {
             ok = movie.getGenres().contains(gen);
             if (ok || gen == null) {
-                if (movie.gettruerating() != 0 && (Integer.toString(movie.getYear()).equals(year) || year == null)) {
-                    movies.getRating_list().put(movie.getTitle(), movie.gettruerating());
+                if (movie.gettruerating() != 0
+                        && (Integer.toString(movie.getYear()).equals(year) || year == null)) {
+                    movies.getRatinglist().put(movie.getTitle(), movie.gettruerating());
                 }
             }
         }
     }
 
-    public void sortrating_list(MovieDB movies) {
-        List<Double> mapvalues = new ArrayList<>(rating_list.values());
-        List<String> mapkeys = new ArrayList<>(rating_list.keySet());
+    /**
+     * @param movies the movies data base
+     *               sorts the ratong hashmap containing
+     *               <movie name><movie rating>
+     */
+    public void sortratinglist(final MovieDB movies) {
+        List<Double> mapvalues = new ArrayList<>(ratinglist.values());
+        List<String> mapkeys = new ArrayList<>(ratinglist.keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
         LinkedHashMap<String, Double> sortedMap = new LinkedHashMap<>();
@@ -110,7 +133,7 @@ public class MovieDB {
 
             while (key.hasNext()) {
                 String cheie = key.next();
-                double comp1 = rating_list.get(cheie);
+                double comp1 = ratinglist.get(cheie);
 
                 if (comp1 == val) {
                     key.remove();
@@ -121,22 +144,32 @@ public class MovieDB {
             }
 
         }
-        movies.setRating_list(sortedMap);
+        movies.setRatinglist(sortedMap);
     }
 
-
-    public void copy_duration(MovieDB movies, String gen, String year) {
-        movies.getDuration_list().clear();
-        for (Movie movie : movies.getMovie_list()) {
-            if ((year == null || Integer.toString(movie.getYear()).equals(year)) && (movie.getGenres().contains(gen) || gen == null)) {
-                movies.getDuration_list().put(movie.getTitle(), movie.getDuration());
+    /**
+     * @param movies the movies data base
+     * @param gen    the filter genre
+     * @param year   the filter year
+     */
+    public void copyduration(final MovieDB movies, final String gen, final String year) {
+        movies.getDurationlist().clear();
+        for (Movie movie : movies.getMovielist()) {
+            if ((year == null || Integer.toString(movie.getYear()).equals(year))
+                    && (movie.getGenres().contains(gen) || gen == null)) {
+                movies.getDurationlist().put(movie.getTitle(), movie.getDuration());
             }
         }
     }
 
-    public void sortduration_list(MovieDB movies) {
-        List<Integer> mapvalues = new ArrayList<>(duration_list.values());
-        List<String> mapkeys = new ArrayList<>(duration_list.keySet());
+    /**
+     * @param movies the movies data base
+     *               sorts the hashmap containing
+     *               <movie name><movie duration>
+     */
+    public void sortdurationlist(final MovieDB movies) {
+        List<Integer> mapvalues = new ArrayList<>(durationlist.values());
+        List<String> mapkeys = new ArrayList<>(durationlist.keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
         LinkedHashMap<String, Integer> sortedMap = new LinkedHashMap<>();
@@ -145,7 +178,7 @@ public class MovieDB {
 
             while (key.hasNext()) {
                 String cheie = key.next();
-                int comp1 = duration_list.get(cheie);
+                int comp1 = durationlist.get(cheie);
 
                 if (comp1 == val) {
                     key.remove();
@@ -156,19 +189,31 @@ public class MovieDB {
             }
 
         }
-        movies.setDuration_list(sortedMap);
+        movies.setDurationlist(sortedMap);
     }
 
-    public void copy_views(UserDB users, MovieDB movies, String gen, String year) {
-        movies.getViews_list().clear();
-        for (Movie movie : movies.getMovie_list()) {
-            if ((gen == null || movie.getGenres().contains(gen)) && (year == null || Integer.toString(movie.getYear()).equals(year))) {
-                for (User user : users.getUser_list()) {
+    /**
+     * @param users  the users data base
+     * @param movies the movies data base
+     * @param gen    the filter genre
+     * @param year   the filter year
+     *               creates a hasmap of <movie name><number of views>
+     */
+    public void copyviews(final UserDB users, final MovieDB movies,
+                          final String gen, final String year) {
+        movies.getViewslist().clear();
+        for (Movie movie : movies.getMovielist()) {
+            if ((gen == null || movie.getGenres().contains(gen))
+                    && (year == null || Integer.toString(movie.getYear()).equals(year))) {
+                for (User user : users.getUserlist()) {
                     if (user.getHistory().containsKey(movie.getTitle())) {
-                        if (!movies.getViews_list().containsKey(movie.getTitle())) {
-                            movies.getViews_list().put(movie.getTitle(), user.getHistory().get(movie.getTitle()));
+                        if (!movies.getViewslist().containsKey(movie.getTitle())) {
+                            movies.getViewslist().put(movie.getTitle(),
+                                    user.getHistory().get(movie.getTitle()));
                         } else {
-                            movies.getViews_list().put(movie.getTitle(), movies.getViews_list().get(movie.getTitle()) + user.getHistory().get(movie.getTitle()));
+                            movies.getViewslist().put(movie.getTitle(),
+                                    movies.getViewslist().get(movie.getTitle())
+                                            + user.getHistory().get(movie.getTitle()));
                         }
                     }
                 }
@@ -176,10 +221,13 @@ public class MovieDB {
         }
     }
 
-
-    public void sortviews_list(MovieDB movies) {
-        List<Integer> mapvalues = new ArrayList<>(movies.getViews_list().values());
-        List<String> mapkeys = new ArrayList<>(movies.getViews_list().keySet());
+    /**
+     * @param movies the movies data base
+     *               sorts the above created hashmap
+     */
+    public void sortViewslist(final MovieDB movies) {
+        List<Integer> mapvalues = new ArrayList<>(movies.getViewslist().values());
+        List<String> mapkeys = new ArrayList<>(movies.getViewslist().keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
         LinkedHashMap<String, Integer> sortedMap = new LinkedHashMap<>();
@@ -188,7 +236,7 @@ public class MovieDB {
 
             while (key.hasNext()) {
                 String cheie = key.next();
-                int comp1 = movies.getViews_list().get(cheie);
+                int comp1 = movies.getViewslist().get(cheie);
 
                 if (comp1 == val) {
                     key.remove();
@@ -199,27 +247,42 @@ public class MovieDB {
             }
 
         }
-        movies.setViews_list(sortedMap);
+        movies.setViewslist(sortedMap);
     }
 
-    public void copy_favoritestitle(MovieDB movies, UserDB users, String gen, String year) {
-        movies.getFavorites_title().clear();
-        for (User user : users.getUser_list()) {
-            for (Movie movie : movies.getMovie_list()) {
-                if ((Integer.toString(movie.getYear()).equals(year) || year == null) && (movie.getGenres().contains(gen) || gen == null)) {
-                    if (user.getFavoriteMovies().contains(movie.getTitle()) && !movies.getFavorites_title().containsKey(movie.getTitle())) {
-                        movies.getFavorites_title().put(movie.getTitle(), 1);
-                    } else if (user.getFavoriteMovies().contains(movie.getTitle()) && movies.getFavorites_title().containsKey(movie.getTitle())) {
-                        movies.getFavorites_title().put(movie.getTitle(), movies.getFavorites_title().get(movie.getTitle()) + 1);
+    /**
+     * @param movies the movies data base
+     * @param users  the user data base
+     * @param gen    the genre fol filter
+     * @param year   the year in filter
+     */
+    public void copyfavoritestitle(final MovieDB movies, final UserDB users,
+                                   final String gen, final String year) {
+        movies.getFavoritestitle().clear();
+        for (User user : users.getUserlist()) {
+            for (Movie movie : movies.getMovielist()) {
+                if ((Integer.toString(movie.getYear()).equals(year) || year == null)
+                        && (movie.getGenres().contains(gen) || gen == null)) {
+                    if (user.getFavoriteMovies().contains(movie.getTitle())
+                            && !movies.getFavoritestitle().containsKey(movie.getTitle())) {
+                        movies.getFavoritestitle().put(movie.getTitle(), 1);
+                    } else if (user.getFavoriteMovies().contains(movie.getTitle())
+                            && movies.getFavoritestitle().containsKey(movie.getTitle())) {
+                        movies.getFavoritestitle().put(movie.getTitle(),
+                                movies.getFavoritestitle().get(movie.getTitle()) + 1);
                     }
                 }
             }
         }
     }
 
-    public void sort_favoritetitles(MovieDB movies) {
-        List<Integer> mapvalues = new ArrayList<>(movies.getFavorites_title().values());
-        List<String> mapkeys = new ArrayList<>(movies.getFavorites_title().keySet());
+    /**
+     * @param movies the movies database
+     *               sorts the favorite movies
+     */
+    public void sortfavoritetitles(final MovieDB movies) {
+        List<Integer> mapvalues = new ArrayList<>(movies.getFavoritestitle().values());
+        List<String> mapkeys = new ArrayList<>(movies.getFavoritestitle().keySet());
         Collections.sort(mapkeys);
         Collections.sort(mapvalues);
         LinkedHashMap<String, Integer> sortedMap = new LinkedHashMap<>();
@@ -228,7 +291,7 @@ public class MovieDB {
 
             while (key.hasNext()) {
                 String cheie = key.next();
-                int comp1 = movies.getFavorites_title().get(cheie);
+                int comp1 = movies.getFavoritestitle().get(cheie);
 
                 if (comp1 == val) {
                     key.remove();
@@ -239,15 +302,7 @@ public class MovieDB {
             }
 
         }
-        movies.setFavorites_title(sortedMap);
+        movies.setFavoritestitle(sortedMap);
     }
-
-//    public void copy_allratings(MovieDB movies, String gen) {
-//        for (Movie movie : movies.getMovie_list()) {
-//            if (movie.getGenres().contains(gen)) {
-//                movies.getAllratings_list().put(movie.getTitle(), movie.gettruerating());
-//            }
-//        }
-//    }
 
 }
