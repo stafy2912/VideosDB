@@ -4,7 +4,6 @@ import actor.Actor;
 import actor.ActorDB;
 import checker.Checkstyle;
 import checker.Checker;
-import commands.CommandsDB;
 import common.Constants;
 import fileio.ActionInputData;
 import fileio.Input;
