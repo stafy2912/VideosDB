@@ -84,34 +84,35 @@ public final class Main {
         Writer fileWriter = new Writer(filePath2);
         JSONArray arrayResult = new JSONArray();
 
-
+        //the message to be printed
         StringBuilder message = new StringBuilder();
+
+        //the users data base
         ArrayList<User> userlist = new ArrayList<>();
         UserDB users = new UserDB(userlist);
         users.copy(input.getUsers());
         users.findfavmovies(users, input.getMovies());
         users.sortFavourite(users);
 
+        //the movies data base
         ArrayList<Movie> movielist = new ArrayList<>();
         MovieDB movies = new MovieDB(movielist);
         movies.copy(input.getMovies());
 
+        //the series data base
         ArrayList<Series> serieslist = new ArrayList<>();
         SeriesDB series = new SeriesDB(serieslist);
         series.copy(input.getSerials());
 
-        ArrayList<ActionInputData> actionlist = new ArrayList<>();
-        CommandsDB comm = new CommandsDB(actionlist);
-        comm.copy(input.getCommands());
-
+        //the actors data base
         ArrayList<Actor> actorlist = new ArrayList<>();
         HashMap<String, Double> actorrating = new HashMap<>();
         ActorDB actors = new ActorDB(actorlist, actorrating);
         actors.copy(input.getActors());
-
+        //count action id
         int count = 0;
         User wanteduser;
-        for (ActionInputData x : comm.getComlist()) {
+        for (ActionInputData x : input.getCommands()) {
             message.setLength(0);
 
             if ("command".equals(x.getActionType())) {
@@ -123,20 +124,23 @@ public final class Main {
                     message.append(" was viewed with total views of ");
                     message.append(wanteduser.getHistory().get(x.getTitle()));
                     //noinspection unchecked
-                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).getActionId(),
+                    arrayResult.add(fileWriter.writeFile(input.getCommands().get(count)
+                                    .getActionId(),
                             "", message.toString()));
                 } else if ("favorite".equals(x.getType())) {
                     wanteduser = users.search(x.getUsername());
                     message.append(wanteduser.favorites(x.getTitle(), wanteduser));
                     //noinspection unchecked
-                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).getActionId(),
+                    arrayResult.add(fileWriter.writeFile(input.getCommands().get(count)
+                                    .getActionId(),
                             "", message.toString()));
                 } else if ("rating".equals(x.getType())) {
                     wanteduser = users.search(x.getUsername());
                     message.append(wanteduser.rating(wanteduser, x.getGrade(), x.getTitle(),
                             x.getSeasonNumber(), movies));
                     //noinspection unchecked
-                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).getActionId(),
+                    arrayResult.add(fileWriter.writeFile(input.getCommands().get(count)
+                                    .getActionId(),
                             "", message.toString()));
                     if (message.toString().contains("success")) {
                         Movie dummymovie = movies.search(movies, x.getTitle());
@@ -158,31 +162,36 @@ public final class Main {
                         actors.copynames(x.getFilters().get(2));
                         int number = Math.min(actors.getActornames().size(), x.getNumber());
                         Collections.sort(actors.getActornames());
+                        //ascending order
                         if (x.getSortType().equals("asc")) {
                             for (String name : actors.getActornames()) {
                                 message.append(name);
                                 message.append(", ");
                             }
                         } else {
+                            //descending order
                             for (int i = actors.getActornames().size() - 1;
                                  i >= (actors.getActornames().size() - number); i--) {
                                 message.append(actors.getActornames().get(i));
                                 message.append(", ");
                             }
                         }
+                        //if query result not null
                         if (!message.toString().equals("Query result: [")) {
                             message.setLength(message.length() - 2);
                         }
                         message.append("]");
                         //noinspection unchecked
                         arrayResult.add(fileWriter.writeFile(
-                                comm.getComlist().get(count).getActionId(),
+                                input.getCommands().get(count).getActionId(),
                                 "", message.toString()));
 
                     }
                     if (x.getCriteria().equals("average")) {
                         message.append("Query result: [");
+                        //make sure the actor rating and rating counter is 0
                         actors.restart(actors);
+                        //give the actors their ratings from every video
                         for (Movie movie : movies.getMovielist()) {
                             if (movie.getCounter() != 0) {
                                 for (String name : movie.getCast()) {
@@ -239,11 +248,12 @@ public final class Main {
                         message.append("]");
                         //noinspection unchecked
                         arrayResult.add(fileWriter
-                                .writeFile(comm.getComlist().get(count).getActionId(),
+                                .writeFile(input.getCommands().get(count).getActionId(),
                                         "", message.toString()));
                     }
                     if (x.getCriteria().equals("awards")) {
                         message.append("Query result: [");
+                        //the words filter is number 3
                         final int awardfilternumber = 3;
                         List<String> prizes = x.getFilters().get(awardfilternumber);
                         actors.copyawardactors(actors, prizes);
@@ -266,7 +276,7 @@ public final class Main {
                         }
                         message.append("]");
                         //noinspection unchecked
-                        arrayResult.add(fileWriter.writeFile(comm.getComlist()
+                        arrayResult.add(fileWriter.writeFile(input.getCommands()
                                 .get(count).getActionId(), "", message.toString()));
                     }
                 }
@@ -274,12 +284,14 @@ public final class Main {
                     if ("shows".equals(x.getObjectType())) {
                         if ("ratings".equals(x.getCriteria())) {
                             message.append("Query result: [");
+                            //the genre and year filters are number 0 and 1
                             String year = x.getFilters().get(0).get(0);
                             String genr = x.getFilters().get(1).get(0);
                             series.copyratings(series, genr, year);
                             series.sortratings(series);
                             ArrayList<String> keys = new ArrayList<>(
                                     series.getRatingslist().keySet());
+                            //get the number of elements to be printed
                             int number = Math.min(keys.size(), x.getNumber());
                             if (x.getSortType().equals("asc")) {
                                 for (int i = 0; i < number; i++) {
@@ -294,16 +306,18 @@ public final class Main {
                                     message.append(", ");
                                 }
                             }
+                            // make sure query result not empty
                             if (!message.toString().equals("Query result: [")) {
                                 message.setLength(message.length() - 2);
                             }
                             message.append("]");
                             //noinspection unchecked
                             arrayResult.add(fileWriter
-                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                    .writeFile(input.getCommands().get(count).getActionId(),
                                             "", message.toString()));
                         } else if ("longest".equals(x.getCriteria())) {
                             message.append("Query result: [");
+                            //rettrieve year and genre filters
                             String year = x.getFilters().get(0).get(0);
                             String genr = x.getFilters().get(1).get(0);
                             series.copyduration(series, genr, year);
@@ -332,7 +346,7 @@ public final class Main {
                             message.append("]");
                             //noinspection unchecked
                             arrayResult.add(fileWriter
-                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                    .writeFile(input.getCommands().get(count).getActionId(),
                                             "", message.toString()));
                         } else if ("most_viewed".equals(x.getCriteria())) {
                             message.append("Query result: [");
@@ -362,11 +376,12 @@ public final class Main {
                             message.append("]");
                             //noinspection unchecked
                             arrayResult.add(fileWriter
-                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                    .writeFile(input.getCommands().get(count).getActionId(),
                                             "", message.toString()));
                             series.getFavoritetitles().clear();
                         } else if ("favorite".equals(x.getCriteria())) {
                             message.append("Query result: [");
+                            //retrieve year and genre filters
                             String year = x.getFilters().get(0).get(0);
                             String genr = x.getFilters().get(1).get(0);
                             series.copyfavoritestitle(series, users, genr, year);
@@ -393,7 +408,7 @@ public final class Main {
                             message.append("]");
                             //noinspection unchecked
                             arrayResult.add(fileWriter
-                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                    .writeFile(input.getCommands().get(count).getActionId(),
                                             "", message.toString()));
                         }
                     } else if ("users".equals(x.getObjectType())) {
@@ -423,7 +438,7 @@ public final class Main {
                             message.append("]");
                             //noinspection unchecked
                             arrayResult.add(fileWriter
-                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                    .writeFile(input.getCommands().get(count).getActionId(),
                                             "", message.toString()));
                         }
                     }
@@ -455,7 +470,7 @@ public final class Main {
                         }
                         message.append("]");
                         //noinspection unchecked
-                        arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count)
+                        arrayResult.add(fileWriter.writeFile(input.getCommands().get(count)
                                 .getActionId(), "", message.toString()));
                     } else if ("longest".equals(x.getCriteria())) {
                         message.append("Query result: [");
@@ -485,7 +500,7 @@ public final class Main {
                         message.append("]");
                         //noinspection unchecked
                         arrayResult.add(fileWriter.writeFile(
-                                comm.getComlist().get(count).getActionId(),
+                                input.getCommands().get(count).getActionId(),
                                 "", message.toString()));
                     } else if ("most_viewed".equals(x.getCriteria())) {
                         message.append("Query result: [");
@@ -512,7 +527,7 @@ public final class Main {
                         message.append("]");
                         //noinspection unchecked
                         arrayResult.add(fileWriter.writeFile(
-                                comm.getComlist().get(count).getActionId(),
+                                input.getCommands().get(count).getActionId(),
                                 "", message.toString()));
                     } else if ("favorite".equals(x.getCriteria())) {
                         message.append("Query result: [");
@@ -540,7 +555,7 @@ public final class Main {
                         message.append("]");
                         //noinspection unchecked
                         arrayResult.add(fileWriter
-                                .writeFile(comm.getComlist().get(count).getActionId(),
+                                .writeFile(input.getCommands().get(count).getActionId(),
                                         "", message.toString()));
                     }
                 }
@@ -568,7 +583,8 @@ public final class Main {
                         message.append("StandardRecommendation cannot be applied!");
                     }
                     //noinspection unchecked
-                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).getActionId(),
+                    arrayResult.add(fileWriter.writeFile(input.getCommands().get(count)
+                                    .getActionId(),
                             "", message.toString()));
                 } else if ("best_unseen".equals(x.getType())) {
                     User wanted = users.search(x.getUsername());
@@ -580,7 +596,7 @@ public final class Main {
                         message.append(keys.get(keys.size() - 1));
                         //noinspection unchecked
                         arrayResult.add(fileWriter
-                                .writeFile(comm.getComlist().get(count).getActionId(),
+                                .writeFile(input.getCommands().get(count).getActionId(),
                                         "", message.toString()));
                     } else {
                         boolean ok = false;
@@ -590,7 +606,7 @@ public final class Main {
                                 message.append(movie.getTitle());
                                 //noinspection unchecked
                                 arrayResult.add(fileWriter
-                                        .writeFile(comm.getComlist().get(count).getActionId(),
+                                        .writeFile(input.getCommands().get(count).getActionId(),
                                                 "", message.toString()));
                                 ok = true;
                             }
@@ -601,7 +617,7 @@ public final class Main {
                                 message.append(serie.getTitle());
                                 //noinspection unchecked
                                 arrayResult.add(fileWriter
-                                        .writeFile(comm.getComlist().get(count).getActionId(),
+                                        .writeFile(input.getCommands().get(count).getActionId(),
                                                 "", message.toString()));
                                 ok = true;
                             }
@@ -610,18 +626,19 @@ public final class Main {
                             message.append("BestRatedUnseenRecommendation cannot be applied!");
                             //noinspection unchecked
                             arrayResult.add(fileWriter
-                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                    .writeFile(input.getCommands().get(count).getActionId(),
                                             "", message.toString()));
 
                         }
                     }
                 } else if ("popular".equals(x.getType())) {
                     User wanted = users.search(x.getUsername());
+                    // check if user is able to get this recommendation
                     if (!wanted.getSubscriptionType().equals("PREMIUM")) {
                         message.append("PopularRecommendation cannot be applied!");
                         //noinspection unchecked
                         arrayResult.add(fileWriter
-                                .writeFile(comm.getComlist().get(count).getActionId(),
+                                .writeFile(input.getCommands().get(count).getActionId(),
                                         "", message.toString()));
                     } else {
                         users.copygenrelist(movies, series);
@@ -631,7 +648,7 @@ public final class Main {
                             message.append("PopularRecommendation cannot be applied!");
                             //noinspection unchecked
                             arrayResult.add(fileWriter
-                                    .writeFile(comm.getComlist().get(count).getActionId(),
+                                    .writeFile(input.getCommands().get(count).getActionId(),
                                             "", message.toString()));
                         } else {
                             boolean ok = true;
@@ -642,11 +659,13 @@ public final class Main {
                                         message.append("PopularRecommendation result: ");
                                         message.append(movie.getTitle());
                                         //noinspection unchecked
-                                        arrayResult.add(fileWriter.writeFile(comm.getComlist()
+                                        arrayResult.add(fileWriter.writeFile(input.getCommands()
                                                 .get(count).getActionId(), "", message.toString()));
                                         ok = false;
+                                        //return the first most popular movie
                                     }
                                 }
+                                //if no movie is available, go through all the shows
                                 if (ok) {
                                     for (Series serie : series.getSerieslist()) {
                                         if (ok && !wanted.getHistory().containsKey(serie.getTitle())
@@ -655,9 +674,11 @@ public final class Main {
                                             message.append(serie.getTitle());
                                             //noinspection unchecked
                                             arrayResult.add(fileWriter
-                                                    .writeFile(comm.getComlist().get(count)
-                                                            .getActionId(), "", message.toString()));
+                                                    .writeFile(input.getCommands().get(count)
+                                                                    .getActionId(), "",
+                                                            message.toString()));
                                             ok = false;
+                                            //return the first most popular movie
                                         }
                                     }
                                 }
@@ -667,12 +688,13 @@ public final class Main {
                                 message.append("PopularRecommendation cannot be applied!");
                                 //noinspection unchecked
                                 arrayResult.add(fileWriter
-                                        .writeFile(comm.getComlist().get(count).getActionId(),
+                                        .writeFile(input.getCommands().get(count).getActionId(),
                                                 "", message.toString()));
                             }
                         }
                     }
                 } else if ("favorite".equals(x.getType())) {
+                    //check if user can do this action
                     User wanted = users.search(x.getUsername());
                     if (!wanted.getSubscriptionType().equals("PREMIUM")) {
                         message.append("FavoriteRecommendation cannot be applied!");
@@ -685,14 +707,18 @@ public final class Main {
                             message.append("FavoriteRecommendation cannot be applied!");
                         } else {
                             if (values.size() == 1) {
+                                //if there is only one video
                                 message.append("FavoriteRecommendation result: ");
                                 message.append(keys.get(keys.size() - 1));
                             } else if (values.size() >= 2) {
+                                //if there are more videos, check if rating is equal
+                                //to see if input order matters
                                 if (!values.get(values.size() - 1)
                                         .equals(values.get(values.size() - 2))) {
                                     message.append("FavoriteRecommendation result: ");
                                     message.append(keys.get(keys.size() - 1));
                                 } else {
+                                    //if input order matters
                                     boolean ok = false;
                                     for (Movie movie : movies.getMovielist()) {
                                         if (!ok && movie.getnmbfavorites(users)
@@ -707,10 +733,11 @@ public final class Main {
                         }
                     }
                     //noinspection unchecked
-                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).
+                    arrayResult.add(fileWriter.writeFile(input.getCommands().get(count).
                             getActionId(), "", message.toString()));
                 } else if ("search".equals(x.getType())) {
                     User wanted = users.search(x.getUsername());
+                    //check if user can do this
                     if (!wanted.getSubscriptionType().equals("PREMIUM")) {
                         message.append("SearchRecommendation cannot be applied!");
                     } else {
@@ -732,7 +759,7 @@ public final class Main {
                         }
                     }
                     //noinspection unchecked
-                    arrayResult.add(fileWriter.writeFile(comm.getComlist().get(count).
+                    arrayResult.add(fileWriter.writeFile(input.getCommands().get(count).
                             getActionId(), "", message.toString()));
                 }
             }
